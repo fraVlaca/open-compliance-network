@@ -30,5 +30,13 @@
         "height": 277
       }
     }
+  },
+  "audit:default": {
+    "dimensions": {
+      "teeLeft": {
+        "width": 255,
+        "height": 263
+      }
+    }
   }
 }

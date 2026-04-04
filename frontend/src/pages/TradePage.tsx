@@ -83,7 +83,7 @@ export default function TradePage() {
           }),
         ]);
 
-        const filledIds = new Set(fillLogs.map(l => l.args.orderId));
+        const filledIds = new Set(fillLogs.map(l => l.args.orderId as string));
 
         const parsed = createLogs.map(l => ({
           orderId: l.args.orderId as string,

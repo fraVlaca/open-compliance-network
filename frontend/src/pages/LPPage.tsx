@@ -13,18 +13,26 @@ import {
   Loader2,
   ShieldCheck,
   ShieldX,
+  CheckCircle2,
+  XCircle,
+  Eye,
 } from "lucide-react";
 import { type Address } from "viem";
-import { CONTRACTS, INTEGRATOR_REGISTRY_ABI, REPORT_CONSUMER_ABI } from "../config/contracts";
+import { CONTRACTS, INTEGRATOR_REGISTRY_ABI, REPORT_CONSUMER_ABI, DEMO_WORKSPACE_ID } from "../config/contracts";
 import { useIntegrator, useIsVerified, ROLE_NAMES } from "../hooks/useComplianceStatus";
 import { useReadContract } from "wagmi";
+import RiskBar from "../components/RiskBar";
+import { keccak256, toHex } from "viem";
 
 export default function LPPage() {
   const { address } = useAccount();
   const { data: integrator, refetch } = useIntegrator(address);
-  const [workspaceId, setWorkspaceId] = useState("");
+  const [workspaceId, setWorkspaceId] = useState(DEMO_WORKSPACE_ID);
   const [tradeId, setTradeId] = useState("");
   const [lookupAddress, setLookupAddress] = useState("");
+  const [ipfsData, setIpfsData] = useState<Record<string, unknown> | null>(null);
+  const [ipfsLoading, setIpfsLoading] = useState(false);
+  const [hashVerified, setHashVerified] = useState<boolean | null>(null);
   const [confirmedLookup, setConfirmedLookup] = useState<Address | undefined>();
 
   const { writeContract, data: tx } = useWriteContract();
@@ -173,69 +181,112 @@ export default function LPPage() {
             </div>
 
             {reportData && reportData.timestamp > 0n && (
-              <div className="space-y-3 p-4 rounded-lg bg-surface-700/50">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium">
-                    Compliance Report
-                  </span>
-                  {reportData.approved ? (
-                    <span className="badge-verified">Approved</span>
-                  ) : (
-                    <span className="badge-rejected">Rejected</span>
-                  )}
-                </div>
-                <div className="grid grid-cols-2 gap-3 text-sm">
-                  <div>
-                    <span className="text-gray-400">Trader:</span>
-                    <div className="font-mono text-xs truncate">
-                      {reportData.trader}
-                    </div>
+              <div className="space-y-4">
+                {/* Report header */}
+                <div className="p-4 rounded-lg bg-surface-700/50 space-y-4">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium">Compliance Report</span>
+                    {reportData.approved ? (
+                      <span className="badge-verified">Approved</span>
+                    ) : (
+                      <span className="badge-rejected">Rejected</span>
+                    )}
                   </div>
-                  <div>
-                    <span className="text-gray-400">Counterparty:</span>
-                    <div className="font-mono text-xs truncate">
-                      {reportData.counterparty}
-                    </div>
-                  </div>
-                  <div>
-                    <span className="text-gray-400">Risk Score:</span>
-                    <div>{reportData.riskScore}/10</div>
-                  </div>
-                  <div>
-                    <span className="text-gray-400">Timestamp:</span>
+
+                  <div className="grid grid-cols-2 gap-3 text-sm">
                     <div>
-                      {new Date(
-                        Number(reportData.timestamp) * 1000
-                      ).toLocaleString()}
+                      <span className="text-gray-400 text-xs">Trader</span>
+                      <div className="font-mono text-xs truncate">{reportData.trader}</div>
+                    </div>
+                    <div>
+                      <span className="text-gray-400 text-xs">Counterparty</span>
+                      <div className="font-mono text-xs truncate">{reportData.counterparty}</div>
+                    </div>
+                    <div>
+                      <span className="text-gray-400 text-xs">Timestamp</span>
+                      <div className="text-xs">{new Date(Number(reportData.timestamp) * 1000).toLocaleString()}</div>
                     </div>
                   </div>
+
+                  {/* Risk Bar */}
+                  <div>
+                    <span className="text-gray-400 text-xs block mb-1.5">Risk Score</span>
+                    <RiskBar score={reportData.riskScore} />
+                  </div>
+
+                  {/* Audit Hash + IPFS */}
+                  <div className="pt-3 border-t border-surface-600 space-y-2">
+                    <div>
+                      <span className="text-xs text-gray-400">Audit Hash (on-chain, DON-signed)</span>
+                      <div className="font-mono text-[10px] truncate text-gray-300 mt-0.5">{reportData.auditHash}</div>
+                    </div>
+                    {reportData.ipfsCid && (
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <span className="text-xs text-gray-400">IPFS CID</span>
+                          <div className="font-mono text-[10px] text-gray-300 mt-0.5">{reportData.ipfsCid}</div>
+                        </div>
+                        <div className="flex gap-2">
+                          <a
+                            href={`https://gateway.pinata.cloud/ipfs/${reportData.ipfsCid}`}
+                            target="_blank" rel="noopener noreferrer"
+                            className="btn-secondary text-xs flex items-center gap-1 py-1 px-2"
+                          >
+                            <ExternalLink className="w-3 h-3" /> Open
+                          </a>
+                          <button
+                            onClick={async () => {
+                              setIpfsLoading(true);
+                              setIpfsData(null);
+                              setHashVerified(null);
+                              try {
+                                const res = await fetch(`https://gateway.pinata.cloud/ipfs/${reportData.ipfsCid}`);
+                                const json = await res.json();
+                                setIpfsData(json);
+                                // Verify hash
+                                const computed = keccak256(toHex(JSON.stringify(json)));
+                                setHashVerified(computed === reportData.auditHash);
+                              } catch {
+                                setIpfsData(null);
+                                setHashVerified(false);
+                              }
+                              setIpfsLoading(false);
+                            }}
+                            className="btn-primary text-xs flex items-center gap-1 py-1 px-2"
+                          >
+                            {ipfsLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : <Eye className="w-3 h-3" />}
+                            Fetch & Verify
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Hash verification badge */}
+                  {hashVerified !== null && (
+                    <div className={`flex items-center gap-2 p-2.5 rounded-lg text-xs ${
+                      hashVerified ? "bg-accent-green/10 border border-accent-green/20 text-accent-green"
+                        : "bg-accent-red/10 border border-accent-red/20 text-accent-red"
+                    }`}>
+                      {hashVerified ? <CheckCircle2 className="w-4 h-4" /> : <XCircle className="w-4 h-4" />}
+                      {hashVerified
+                        ? "Hash verified — keccak256(IPFS record) matches on-chain auditHash"
+                        : "Hash mismatch — record may have been tampered with"}
+                    </div>
+                  )}
                 </div>
 
-                {/* Audit Hash + IPFS */}
-                <div className="pt-3 border-t border-surface-600 space-y-2">
-                  <div>
-                    <span className="text-xs text-gray-400">Audit Hash:</span>
-                    <div className="font-mono text-xs truncate text-gray-300">
-                      {reportData.auditHash}
-                    </div>
+                {/* IPFS Record Preview */}
+                {ipfsData && (
+                  <div className="space-y-2">
+                    <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                      Full Audit Record (from IPFS)
+                    </h3>
+                    <pre className="bg-surface-900 rounded-lg p-4 text-[10px] font-mono text-gray-400 overflow-auto max-h-64 border border-surface-700">
+                      {JSON.stringify(ipfsData, null, 2)}
+                    </pre>
                   </div>
-                  {reportData.ipfsCid && (
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs text-gray-400">
-                        IPFS Record:
-                      </span>
-                      <a
-                        href={`https://gateway.pinata.cloud/ipfs/${reportData.ipfsCid}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-xs text-accent-blue hover:underline flex items-center gap-1"
-                      >
-                        {reportData.ipfsCid.slice(0, 20)}...
-                        <ExternalLink className="w-3 h-3" />
-                      </a>
-                    </div>
-                  )}
-                </div>
+                )}
               </div>
             )}
           </div>
