@@ -1,0 +1,11 @@
+{
+  "sumsubApiUrl": "https://api.sumsub.com",
+  "sumsubLevelName": "id-and-liveness",
+  "sumsubAppToken": "sbx:hbGNWhIC7lz2DbKorGEtjdGI.oKkt6JKtbmRkdsbAEyrdSPbzlYO2tb4m",
+  "sumsubSecretKey": "00E19drncuW96bGjVx2g5OBgfVKOHDfs",
+  "chainalysisApiUrl": "https://api.chainalysis.com/api/risk/v2",
+  "chainalysisApiKey": "a8b0314f1d3d06ef94a665d1f1eecfc9d3402119e8d68e166df17c1c2da62f98",
+  "consumerContractAddress": "0x03726f51b287b04710DeB2cb62Bb9264bAC5bb11",
+  "integratorRegistryAddress": "0xCC1Ca53a3e0fc709EEF9a4682dC1bC1db3C028b1",
+  "chainSelectorName": "arc-testnet"
+}
