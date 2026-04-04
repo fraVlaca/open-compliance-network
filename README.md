@@ -9,7 +9,7 @@
 
 </div>
 
-# Open Compliance Network — Trustless Compliance Engine for Institutional DeFi
+# Open Compliance Layer — Trustless Compliance Engine for Institutional DeFi
 
 A shared, verifiable compliance orchestration layer built on [Chainlink CRE](https://docs.chain.link/cre) and [Chainlink ACE](https://chain.link/automated-compliance-engine), deployed on [Arc](https://docs.arc.network/) (Circle). Runs KYC, AML, sanctions screening, and per-trade compliance checks inside a Trusted Execution Environment on a decentralized oracle network — producing on-chain attestations that every counterparty can trust.
 
@@ -31,7 +31,7 @@ Protocol contract reads: require(isVerified(wallet))  ◄───────�
 
 ## Why Arc (Circle)
 
-Open Compliance Network is deployed on **Arc** as a foundational DeFi building block for the ecosystem. Arc is purpose-built for institutional finance — USDC-native gas, Circle's full-stack platform, and regulatory-first design. This is exactly the chain where compliance infrastructure matters most.
+Open Compliance Layer is deployed on **Arc** as a foundational DeFi building block for the ecosystem. Arc is purpose-built for institutional finance — USDC-native gas, Circle's full-stack platform, and regulatory-first design. This is exactly the chain where compliance infrastructure matters most.
 
 **What we unlock for Arc:**
 
@@ -142,7 +142,7 @@ forge build && forge test
 ## Project Structure
 
 ```
-open-compliance-network/
+cannes2026/
   contracts/                        # Solidity contracts (Foundry)
     src/
       consumers/
@@ -198,7 +198,7 @@ See [`documentation/`](./documentation/) for full architecture docs:
 
 Built for **ETHGlobal Cannes 2026**.
 
-**Arc Track (Circle)**: Open Compliance Network is a foundational DeFi primitive for Arc — enabling any protocol on the chain to serve regulated institutions without building their own compliance infrastructure. Deployed and live on Arc Testnet.
+**Arc Track (Circle)**: Open Compliance Layer is a foundational DeFi primitive for Arc — enabling any protocol on the chain to serve regulated institutions without building their own compliance infrastructure. Deployed and live on Arc Testnet.
 
 **Chainlink CRE Track**: Three CRE workflows running compliance checks inside TEE, writing DON-signed attestations on-chain via KeystoneForwarder, using Confidential HTTP for provider API calls with secrets in Vault DON.
 
