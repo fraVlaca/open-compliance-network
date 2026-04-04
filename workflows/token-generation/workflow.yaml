@@ -1,6 +1,6 @@
 staging-settings:
   user-workflow:
-    workflow-name: "identity-audit-staging"
+    workflow-name: "token-generation-staging"
   workflow-artifacts:
     workflow-path: "./main.ts"
     config-path: "./config.json"

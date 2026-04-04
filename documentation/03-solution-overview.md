@@ -14,7 +14,40 @@ The compliance checks exist. The providers exist. What's missing is:
 - A unified audit trail that combines all provider data per trade
 - Verifiable execution that proves the checks actually ran
 
-## How It Works — High Level
+## How It Works — Identity Verification
+
+Before trading, users get KYC-verified via the integrator's frontend and backend:
+
+```
+Integrator Frontend          Integrator Backend          CRE Workflows (TEE)          On-chain
+(@ocn/react SDK)             (@ocn/node-sdk)                    |                        |
+                                    |                           |                        |
+  "Get Verified" click              |                           |                        |
+       |                            |                           |                        |
+       |-- POST /kyc/token ------->|                           |                        |
+       |                            |-- HTTP trigger ---------> |                        |
+       |                            |                           | Workflow D: Token Gen   |
+       |                            |                           | Conf HTTP -> Sumsub     |
+       |<-- { accessToken } --------|<-- token returned ------- |                        |
+       |                            |                           |                        |
+       |-- Sumsub iframe            |                           |                        |
+       |   user completes KYC       |                           |                        |
+       |                            |                           |                        |
+       |-- POST /kyc/verify ------->|                           |                        |
+       |                            |-- HTTP trigger ---------> |                        |
+       |                            |                           | Workflow A: Verify      |
+       |                            |                           | Conf HTTP -> Sumsub     |
+       |                            |                           | Conf HTTP -> Chainalysis|
+       |                            |                           | onReport() -----------> | credential
+       |<-- { verified } -----------|                           |                        | written
+       |                            |                           |                        |
+       |-- poll isVerified() -------+---------------------------+----------------------> | (EVM read)
+       |<-- true -------------------|                           |                        |
+```
+
+No provider credentials leave CRE's TEE. The integrator backend orchestrates — it never holds API keys.
+
+## How It Works — Per-Trade Compliance
 
 ```
 Trade submitted on-chain
@@ -104,4 +137,4 @@ The compliance engine is deployed on Arc as a foundational DeFi building block f
 
 Any protocol deploying on Arc can integrate compliance with 1 line of Solidity. The EscrowSwap demo uses USDC for escrow-based swaps with compliance gating — the natural primitive for Arc's stablecoin-first economy. Instead of every Arc protocol independently building compliance stacks, they share one engine. Credentials use ACE's Cross-Chain Identifiers (CCIDs), making compliance status portable across EVM chains via CCIP.
 
-Arc's vision is an Economic OS for global-scale finance. Institutional adoption requires compliance. Open Compliance Layer provides that compliance as a decentralized, verifiable, shared primitive.
+Arc's vision is an Economic OS for global-scale finance. Institutional adoption requires compliance. Open Compliance Network provides that compliance as a decentralized, verifiable, shared primitive.

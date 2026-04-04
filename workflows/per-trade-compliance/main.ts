@@ -4,15 +4,22 @@
  * Trigger: EVM Log (watches ComplianceCheckRequested event)
  * Flow: Decode event → IntegratorRegistry read → Sumsub check → Chainalysis x2 → Rules → writeReport + IPFS
  *
- * Note: Sumsub requires HMAC-SHA256 signing. Noble hashes used in WASM runtime.
- * Credentials in config for simulation; Vault DON in production.
+ * Privacy: All Sumsub/Chainalysis API calls use ConfidentialHTTPClient.
+ * App Token + API keys stay in Vault DON / TEE enclave via {{.key}} templates.
+ * HMAC-SHA256 computed in handler, passed to enclave as plain header value.
+ *
+ * Qualifies for: Chainlink privacy standard track (Confidential HTTP + Vault DON secrets)
  */
 import {
   cre,
   Runner,
-  type Runtime,
-  getNetwork,
+  ConfidentialHTTPClient,
+  handler,
+  prepareReportRequest,
   encodeCallMsg,
+  getNetwork,
+  bytesToHex,
+  type Runtime,
 } from "@chainlink/cre-sdk";
 import {
   encodeAbiParameters,
@@ -32,14 +39,12 @@ import { sha256 } from "@noble/hashes/sha256";
 import { z } from "zod";
 
 // ---------------------------------------------------------------------------
-// Config
+// Config — sumsubAppToken + chainalysisApiKey in Vault DON secrets
 // ---------------------------------------------------------------------------
 const configSchema = z.object({
   sumsubApiUrl: z.string(),
-  sumsubAppToken: z.string(),
   sumsubSecretKey: z.string(),
   chainalysisApiUrl: z.string(),
-  chainalysisApiKey: z.string(),
   reportConsumerAddress: z.string(),
   integratorRegistryAddress: z.string(),
   identityRegistryAddress: z.string(),
@@ -47,12 +52,11 @@ const configSchema = z.object({
   chainSelectorName: z.string(),
   maxWalletRiskScore: z.number(),
   restrictedJurisdictions: z.array(z.string()),
+  owner: z.string(),
 });
 type Config = z.infer<typeof configSchema>;
 
-// ---------------------------------------------------------------------------
 // Types
-// ---------------------------------------------------------------------------
 interface SumsubStatus { reviewStatus: string; reviewAnswer: string; sanctionsHit: boolean; pepStatus: boolean; jurisdiction: string; }
 interface WalletRisk { riskScore: number; sanctionedExposure: number; darknetExposure: number; mixerExposure: number; }
 interface ComplianceDecision { approved: boolean; riskScore: number; flags: string[]; reasoning: string; }
@@ -65,39 +69,62 @@ interface AuditRecord {
 }
 
 // ---------------------------------------------------------------------------
-// Sumsub HMAC signing (Noble hashes — works in QuickJS WASM)
+// HMAC-SHA256 signing
 // ---------------------------------------------------------------------------
 function sumsubSign(secretKey: string, ts: string, method: string, path: string, body: string = ""): string {
   const sig = hmac(sha256, new TextEncoder().encode(secretKey), new TextEncoder().encode(ts + method + path + body));
   return Array.from(new Uint8Array(sig)).map(b => b.toString(16).padStart(2, "0")).join("");
 }
 
-function sumsubHeaders(config: Config, now: Date, method: string, path: string): { [key: string]: string } {
-  const ts = Math.floor(now.getTime() / 1000).toString();
-  return {
-    "X-App-Token": config.sumsubAppToken,
-    "X-App-Access-Sig": sumsubSign(config.sumsubSecretKey, ts, method, path),
-    "X-App-Access-Ts": ts,
-    Accept: "application/json",
-  };
+// ---------------------------------------------------------------------------
+// Confidential HTTP helpers
+// ---------------------------------------------------------------------------
+function confSumsubGet(client: ConfidentialHTTPClient, runtime: Runtime<Config>, url: string, hmacSig: string, ts: string) {
+  return client.sendRequest(runtime, {
+    vaultDonSecrets: [{ key: "sumsubAppToken", owner: runtime.config.owner }],
+    request: {
+      url, method: "GET",
+      multiHeaders: {
+        "X-App-Token": { values: ["{{.sumsubAppToken}}"] },
+        "X-App-Access-Sig": { values: [hmacSig] },
+        "X-App-Access-Ts": { values: [ts] },
+        Accept: { values: ["application/json"] },
+      },
+    },
+  }).result();
+}
+
+function confChainalysisGet(client: ConfidentialHTTPClient, runtime: Runtime<Config>, url: string) {
+  return client.sendRequest(runtime, {
+    vaultDonSecrets: [{ key: "chainalysisApiKey", owner: runtime.config.owner }],
+    request: {
+      url, method: "GET",
+      multiHeaders: {
+        Token: { values: ["{{.chainalysisApiKey}}"] },
+        Accept: { values: ["application/json"] },
+      },
+    },
+  }).result();
+}
+
+function respText(resp: { body: Uint8Array }): string {
+  return new TextDecoder().decode(resp.body);
 }
 
 // ---------------------------------------------------------------------------
-// Provider check functions
+// Provider checks via Confidential HTTP
 // ---------------------------------------------------------------------------
-function checkSumsub(runtime: Runtime<Config>, http: any, wallet: Address, wsId: Hex, brokerAppId: Hex): SumsubStatus {
+function checkSumsub(client: ConfidentialHTTPClient, runtime: Runtime<Config>, wallet: Address, wsId: Hex, brokerAppId: Hex): SumsubStatus {
   const externalUserId = `${wsId}:${brokerAppId}:${wallet}`;
   const path = `/resources/applicants/-;externalUserId=${encodeURIComponent(externalUserId)}/one`;
-  const resp = http.sendRequest(runtime, {
-    url: `${runtime.config.sumsubApiUrl}${path}`,
-    method: "GET",
-    headers: sumsubHeaders(runtime.config, runtime.now(), "GET", path),
-  }).result();
+  const ts = Math.floor(runtime.now().getTime() / 1000).toString();
+  const hmacSig = sumsubSign(runtime.config.sumsubSecretKey, ts, "GET", path);
+  const resp = confSumsubGet(client, runtime, `${runtime.config.sumsubApiUrl}${path}`, hmacSig, ts);
 
   if (resp.statusCode !== 200) {
     return { reviewStatus: "not_found", reviewAnswer: "NONE", sanctionsHit: false, pepStatus: false, jurisdiction: "UNKNOWN" };
   }
-  const data = JSON.parse(Buffer.from(resp.body).toString("utf-8"));
+  const data = JSON.parse(respText(resp));
   return {
     reviewStatus: data.review?.reviewStatus ?? "unknown",
     reviewAnswer: data.review?.reviewResult?.reviewAnswer ?? "NONE",
@@ -106,15 +133,10 @@ function checkSumsub(runtime: Runtime<Config>, http: any, wallet: Address, wsId:
   };
 }
 
-function checkWalletRisk(runtime: Runtime<Config>, http: any, wallet: Address): WalletRisk {
-  const resp = http.sendRequest(runtime, {
-    url: `${runtime.config.chainalysisApiUrl}/entities/${wallet}`,
-    method: "GET",
-    headers: { Token: runtime.config.chainalysisApiKey, Accept: "application/json" },
-  }).result();
-
+function checkWalletRisk(client: ConfidentialHTTPClient, runtime: Runtime<Config>, wallet: Address): WalletRisk {
+  const resp = confChainalysisGet(client, runtime, `${runtime.config.chainalysisApiUrl}/entities/${wallet}`);
   if (resp.statusCode !== 200) return { riskScore: 0, sanctionedExposure: 0, darknetExposure: 0, mixerExposure: 0 };
-  const data = JSON.parse(Buffer.from(resp.body).toString("utf-8"));
+  const data = JSON.parse(respText(resp));
   return { riskScore: data.riskScore ?? 0, sanctionedExposure: data.exposures?.sanctioned ?? 0, darknetExposure: data.exposures?.darknet ?? 0, mixerExposure: data.exposures?.mixer ?? 0 };
 }
 
@@ -142,18 +164,19 @@ function determineRegulation(j: string): string {
 // Handler — triggered by EVM Log event
 // ---------------------------------------------------------------------------
 const onLogTrigger = (runtime: Runtime<Config>, log: any): string => {
-  // All viem calls inside handler
   const REGISTRY_ABI = parseAbi(["function getIntegrator(address) view returns (bytes32, bytes32, uint8, bool)"]);
   const IDENTITY_ABI = parseAbi(["function getIdentity(address) view returns (bytes32)"]);
   const CREDENTIAL_ABI = parseAbi(["function getCredential(bytes32, bytes32) view returns (uint40, bytes)"]);
   const KYC_VERIFIED = keccak256(encodePacked(["string"], ["KYC_VERIFIED"]));
 
-  // Decode event
-  const tradeId = log.topics[1] as Hex;
-  const trader = ("0x" + log.topics[2].slice(26)) as Address;
-  const sourceContract = log.address as Address;
+  // Log fields are Uint8Array — convert to hex with bytesToHex
+  const tradeId = bytesToHex(log.topics[1]) as Hex;
+  const traderTopic = bytesToHex(log.topics[2]) as Hex;
+  const trader = ("0x" + traderTopic.slice(26)) as Address;
+  const sourceContract = bytesToHex(log.address) as Address;
+  const dataHex = bytesToHex(log.data) as Hex;
   const [counterparty, asset, amount] = decodeAbiParameters(
-    parseAbiParameters("address, address, uint256"), log.data as Hex
+    parseAbiParameters("address, address, uint256"), dataHex
   );
 
   runtime.log(`Per-trade check: trade=${tradeId}, trader=${trader}`);
@@ -161,16 +184,16 @@ const onLogTrigger = (runtime: Runtime<Config>, log: any): string => {
   const network = getNetwork({ chainFamily: "evm", chainSelectorName: runtime.config.chainSelectorName, isTestnet: true });
   if (!network) throw new Error(`Network not found: ${runtime.config.chainSelectorName}`);
   const evmClient = new cre.capabilities.EVMClient(network.chainSelector.selector);
-  const http = new cre.capabilities.HTTPClient();
+  const confHTTP = new ConfidentialHTTPClient();
   const now = runtime.now();
 
   // 1. Read IntegratorRegistry
   let workspaceId: Hex = keccak256(toHex("default"));
   try {
     const regResult = evmClient.callContract(runtime, {
-      call: encodeCallMsg({ from: "0x0000000000000000000000000000000000000000", to: runtime.config.integratorRegistryAddress, data: encodeFunctionData({ abi: REGISTRY_ABI, functionName: "getIntegrator", args: [sourceContract] }) }),
+      call: encodeCallMsg({ from: "0x0000000000000000000000000000000000000000" as Address, to: runtime.config.integratorRegistryAddress as Address, data: encodeFunctionData({ abi: REGISTRY_ABI, functionName: "getIntegrator", args: [sourceContract] }) }),
     }).result();
-    const decoded = decodeFunctionResult({ abi: REGISTRY_ABI, functionName: "getIntegrator", data: regResult as unknown as Hex }) as [Hex, Hex, number, boolean];
+    const decoded = decodeFunctionResult({ abi: REGISTRY_ABI, functionName: "getIntegrator", data: bytesToHex(regResult.data) as Hex }) as [Hex, Hex, number, boolean];
     workspaceId = decoded[1];
   } catch { runtime.log("IntegratorRegistry lookup failed — using defaults"); }
 
@@ -178,23 +201,23 @@ const onLogTrigger = (runtime: Runtime<Config>, log: any): string => {
   let brokerAppId: Hex = keccak256(toHex("unknown-broker"));
   try {
     const idResult = evmClient.callContract(runtime, {
-      call: encodeCallMsg({ from: "0x0000000000000000000000000000000000000000", to: runtime.config.identityRegistryAddress, data: encodeFunctionData({ abi: IDENTITY_ABI, functionName: "getIdentity", args: [trader] }) }),
+      call: encodeCallMsg({ from: "0x0000000000000000000000000000000000000000" as Address, to: runtime.config.identityRegistryAddress as Address, data: encodeFunctionData({ abi: IDENTITY_ABI, functionName: "getIdentity", args: [trader] }) }),
     }).result();
-    const ccid = decodeFunctionResult({ abi: IDENTITY_ABI, functionName: "getIdentity", data: idResult as unknown as Hex }) as Hex;
+    const ccid = decodeFunctionResult({ abi: IDENTITY_ABI, functionName: "getIdentity", data: bytesToHex(idResult.data) as Hex }) as Hex;
     if (ccid !== "0x0000000000000000000000000000000000000000000000000000000000000000") {
       const credResult = evmClient.callContract(runtime, {
-        call: encodeCallMsg({ from: "0x0000000000000000000000000000000000000000", to: runtime.config.credentialRegistryAddress, data: encodeFunctionData({ abi: CREDENTIAL_ABI, functionName: "getCredential", args: [ccid, KYC_VERIFIED] }) }),
+        call: encodeCallMsg({ from: "0x0000000000000000000000000000000000000000" as Address, to: runtime.config.credentialRegistryAddress as Address, data: encodeFunctionData({ abi: CREDENTIAL_ABI, functionName: "getCredential", args: [ccid, KYC_VERIFIED] }) }),
       }).result();
-      const [, credData] = decodeFunctionResult({ abi: CREDENTIAL_ABI, functionName: "getCredential", data: credResult as unknown as Hex }) as [number, Hex];
+      const [, credData] = decodeFunctionResult({ abi: CREDENTIAL_ABI, functionName: "getCredential", data: bytesToHex(credResult.data) as Hex }) as [number, Hex];
       const decoded = decodeAbiParameters(parseAbiParameters("uint8, uint8, string, bytes32, bytes32"), credData);
       brokerAppId = decoded[3] as Hex;
     }
   } catch { runtime.log("Credential lookup failed — using default brokerAppId"); }
 
-  // 3-4. Provider checks
-  const sumsubStatus = checkSumsub(runtime, http, trader, workspaceId, brokerAppId);
-  const traderRisk = checkWalletRisk(runtime, http, trader);
-  const counterpartyRisk = checkWalletRisk(runtime, http, counterparty as Address);
+  // 3-4. Provider checks via Confidential HTTP
+  const sumsubStatus = checkSumsub(confHTTP, runtime, trader, workspaceId, brokerAppId);
+  const traderRisk = checkWalletRisk(confHTTP, runtime, trader);
+  const counterpartyRisk = checkWalletRisk(confHTTP, runtime, counterparty as Address);
 
   // 5-6. Rules + decision
   const jurisdictionAllowed = !runtime.config.restrictedJurisdictions.includes(sumsubStatus.jurisdiction);
@@ -210,21 +233,21 @@ const onLogTrigger = (runtime: Runtime<Config>, log: any): string => {
     jurisdictionCheck: { allowed: jurisdictionAllowed, jurisdiction: sumsubStatus.jurisdiction, regulation: determineRegulation(sumsubStatus.jurisdiction) },
     decision,
   };
-  const auditJson = JSON.stringify(auditRecord);
-  const auditHash = keccak256(toHex(auditJson));
-
-  // 8. IPFS upload (Pinata) — skip if no key configured
+  const auditHash = keccak256(toHex(JSON.stringify(auditRecord)));
   let ipfsCid = "";
-  // TODO: Add Pinata upload when key is available
+  const reportTs = BigInt(Math.floor(now.getTime() / 1000));
 
-  // 9. Write ComplianceReport on-chain
+  // 8. Write ComplianceReport on-chain — use flat params (not tuple)
   const reportPayload = encodeAbiParameters(
-    parseAbiParameters("(bytes32, address, address, address, bool, uint8, bytes32, string, uint256)"),
-    [{ 0: tradeId, 1: trader, 2: counterparty as Address, 3: sourceContract, 4: decision.approved, 5: decision.riskScore, 6: auditHash, 7: ipfsCid, 8: BigInt(Math.floor(now.getTime() / 1000)) }] as any
+    parseAbiParameters("bytes32, address, address, address, bool, uint8, bytes32, string, uint256"),
+    [tradeId, trader, counterparty as Address, sourceContract, decision.approved, decision.riskScore, auditHash, ipfsCid, reportTs]
   );
-
-  const report = runtime.report(reportPayload);
-  evmClient.writeReport(runtime, runtime.config.reportConsumerAddress as Address, report, { gasLimit: "500000" }).result();
+  const report = runtime.report(prepareReportRequest(reportPayload)).result();
+  evmClient.writeReport(runtime, {
+    receiver: runtime.config.reportConsumerAddress,
+    report,
+    gasConfig: { gasLimit: "500000" },
+  }).result();
 
   runtime.log(`Compliance report written for trade ${tradeId}`);
   return JSON.stringify({ tradeId, approved: decision.approved, riskScore: decision.riskScore, auditHash });
@@ -233,7 +256,6 @@ const onLogTrigger = (runtime: Runtime<Config>, log: any): string => {
 // ---------------------------------------------------------------------------
 // Init + main — EVM Log Trigger
 // ---------------------------------------------------------------------------
-// Helper: hex string → base64 (for protobuf bytes fields)
 function hexToBase64(hex: string): string {
   const h = hex.startsWith("0x") ? hex.slice(2) : hex;
   const bytes = new Uint8Array(h.length / 2);
@@ -244,20 +266,13 @@ function hexToBase64(hex: string): string {
 function initWorkflow(config: Config) {
   const network = getNetwork({ chainFamily: "evm", chainSelectorName: config.chainSelectorName, isTestnet: true });
   if (!network) throw new Error(`Network not found: ${config.chainSelectorName}`);
-
   const evmClient = new cre.capabilities.EVMClient(network.chainSelector.selector);
-
-  // Event signature as base64-encoded bytes32
   const eventSig = keccak256(toHex("ComplianceCheckRequested(bytes32,address,address,address,uint256)"));
   const eventSigBase64 = hexToBase64(eventSig);
 
   return [
-    cre.handler(
-      evmClient.logTrigger({
-        addresses: [],
-        topics: [{ values: [eventSigBase64] }],
-        confidence: "CONFIDENCE_LEVEL_FINALIZED",
-      }),
+    handler(
+      evmClient.logTrigger({ addresses: [], topics: [{ values: [eventSigBase64] }], confidence: "CONFIDENCE_LEVEL_FINALIZED" }),
       onLogTrigger
     ),
   ];

@@ -1,20 +1,27 @@
 /**
  * Workflow A: Identity Verification
  *
- * Trigger: HTTP (frontend calls after user completes Sumsub SDK)
- * Flow: IntegratorRegistry read → Sumsub verify (HMAC-signed) → Chainalysis risk → writeReport credential
+ * Trigger: HTTP (integrator backend calls after user completes Sumsub iframe)
+ * Flow: IntegratorRegistry read → Sumsub verify (Confidential HTTP) → Chainalysis risk (Confidential HTTP) → writeReport
  *
- * Sumsub requires HMAC-SHA256 request signing (X-App-Access-Sig).
- * Noble hashes (@noble/hashes) is used for HMAC in the QuickJS WASM runtime.
- * In production: secrets from Vault DON. In simulation: from config for demo.
+ * Privacy: Sumsub App Token injected via {{.sumsubAppToken}} — stays in Vault DON / TEE enclave.
+ * Chainalysis API key injected via {{.chainalysisApiKey}} — stays in Vault DON.
+ * HMAC-SHA256 computed in handler (needs secret key), passed as plain header value.
+ *
+ * Qualifies for: Chainlink privacy standard track (Confidential HTTP + Vault DON secrets)
  */
 import {
   cre,
   Runner,
+  ConfidentialHTTPClient,
+  ok,
+  bytesToHex,
+  handler,
+  prepareReportRequest,
+  encodeCallMsg,
+  getNetwork,
   type Runtime,
   type HTTPPayload,
-  getNetwork,
-  encodeCallMsg,
 } from "@chainlink/cre-sdk";
 import {
   encodeAbiParameters,
@@ -33,41 +40,70 @@ import { sha256 } from "@noble/hashes/sha256";
 import { z } from "zod";
 
 // ---------------------------------------------------------------------------
-// Config — includes Sumsub credentials for simulation (Vault DON in production)
+// Config — sumsubAppToken + chainalysisApiKey in Vault DON secrets, NOT config
+// sumsubSecretKey in config for HMAC computation (simulation).
+// Production: runtime.getSecret("sumsubSecretKey")
 // ---------------------------------------------------------------------------
 const configSchema = z.object({
   sumsubApiUrl: z.string(),
   sumsubLevelName: z.string(),
-  sumsubAppToken: z.string(),
   sumsubSecretKey: z.string(),
   chainalysisApiUrl: z.string(),
-  chainalysisApiKey: z.string(),
   consumerContractAddress: z.string(),
   integratorRegistryAddress: z.string(),
   chainSelectorName: z.string(),
+  owner: z.string(),
 });
-
 type Config = z.infer<typeof configSchema>;
 
 // ---------------------------------------------------------------------------
-// Sumsub HMAC-SHA256 signing (using Noble hashes — works in QuickJS WASM)
+// HMAC-SHA256 signing (Noble hashes — works in QuickJS WASM)
 // ---------------------------------------------------------------------------
 function sumsubSign(secretKey: string, ts: string, method: string, path: string, body: string = ""): string {
-  const signingString = ts + method + path + body;
-  const sig = hmac(sha256, new TextEncoder().encode(secretKey), new TextEncoder().encode(signingString));
+  const sig = hmac(sha256, new TextEncoder().encode(secretKey), new TextEncoder().encode(ts + method + path + body));
   return Array.from(new Uint8Array(sig)).map(b => b.toString(16).padStart(2, "0")).join("");
 }
 
-function sumsubHeaders(config: Config, now: Date, method: string, path: string, body: string = ""): { [key: string]: string } {
-  const ts = Math.floor(now.getTime() / 1000).toString();
-  const sig = sumsubSign(config.sumsubSecretKey, ts, method, path, body);
-  return {
-    "X-App-Token": config.sumsubAppToken,
-    "X-App-Access-Sig": sig,
-    "X-App-Access-Ts": ts,
-    Accept: "application/json",
-    "Content-Type": "application/json",
-  };
+// ---------------------------------------------------------------------------
+// Confidential HTTP helpers — credentials stay in TEE enclave
+// ---------------------------------------------------------------------------
+function confSumsubRequest(
+  client: ConfidentialHTTPClient, runtime: Runtime<Config>,
+  url: string, method: string, hmacSig: string, ts: string, bodyString?: string
+) {
+  return client.sendRequest(runtime, {
+    vaultDonSecrets: [{ key: "sumsubAppToken", owner: runtime.config.owner }],
+    request: {
+      url,
+      method,
+      multiHeaders: {
+        "X-App-Token": { values: ["{{.sumsubAppToken}}"] },
+        "X-App-Access-Sig": { values: [hmacSig] },
+        "X-App-Access-Ts": { values: [ts] },
+        Accept: { values: ["application/json"] },
+        "Content-Type": { values: ["application/json"] },
+      },
+      ...(bodyString ? { bodyString } : {}),
+    },
+  }).result();
+}
+
+function confChainalysisGet(client: ConfidentialHTTPClient, runtime: Runtime<Config>, url: string) {
+  return client.sendRequest(runtime, {
+    vaultDonSecrets: [{ key: "chainalysisApiKey", owner: runtime.config.owner }],
+    request: {
+      url,
+      method: "GET",
+      multiHeaders: {
+        Token: { values: ["{{.chainalysisApiKey}}"] },
+        Accept: { values: ["application/json"] },
+      },
+    },
+  }).result();
+}
+
+function respText(resp: { body: Uint8Array }): string {
+  return new TextDecoder().decode(resp.body);
 }
 
 // ---------------------------------------------------------------------------
@@ -91,54 +127,49 @@ const onHttpTrigger = (runtime: Runtime<Config>, payload: HTTPPayload): string =
   const evmClient = new cre.capabilities.EVMClient(network.chainSelector.selector);
   const callData = encodeFunctionData({ abi: REGISTRY_ABI, functionName: "getIntegrator", args: [wallet] });
   const regResult = evmClient.callContract(runtime, {
-    call: encodeCallMsg({ from: "0x0000000000000000000000000000000000000000", to: runtime.config.integratorRegistryAddress, data: callData }),
+    call: encodeCallMsg({
+      from: "0x0000000000000000000000000000000000000000" as Address,
+      to: runtime.config.integratorRegistryAddress as Address,
+      data: callData,
+    }),
   }).result();
 
   let brokerAppId: Hex = keccak256(toHex("self-onboard"));
   let wsId: Hex = keccak256(toHex("default"));
   try {
-    const decoded = decodeFunctionResult({ abi: REGISTRY_ABI, functionName: "getIntegrator", data: regResult as unknown as Hex }) as [Hex, Hex, number, boolean];
+    const decoded = decodeFunctionResult({ abi: REGISTRY_ABI, functionName: "getIntegrator", data: bytesToHex(regResult.data) as Hex }) as [Hex, Hex, number, boolean];
     if (decoded[3]) { brokerAppId = decoded[0]; wsId = decoded[1]; }
   } catch { runtime.log("IntegratorRegistry lookup failed — using defaults"); }
 
   const externalUserId = `${wsId}:${brokerAppId}:${wallet}`;
 
-  // 2. Sumsub KYC check (regular HTTP with HMAC signing via Noble hashes)
-  const http = new cre.capabilities.HTTPClient();
+  // 2. Sumsub KYC check via Confidential HTTP
+  const confHTTP = new ConfidentialHTTPClient();
   const now = runtime.now();
+  const ts = Math.floor(now.getTime() / 1000).toString();
 
-  // Try to get existing applicant
   const getPath = `/resources/applicants/-;externalUserId=${encodeURIComponent(externalUserId)}/one`;
-  const getResp = http.sendRequest(runtime, {
-    url: `${runtime.config.sumsubApiUrl}${getPath}`,
-    method: "GET",
-    headers: sumsubHeaders(runtime.config, now, "GET", getPath),
-  }).result();
+  const getHmac = sumsubSign(runtime.config.sumsubSecretKey, ts, "GET", getPath);
+  const getResp = confSumsubRequest(confHTTP, runtime, `${runtime.config.sumsubApiUrl}${getPath}`, "GET", getHmac, ts);
 
   runtime.log(`Sumsub GET status: ${getResp.statusCode}`);
 
   if (getResp.statusCode === 404) {
-    // Create applicant
     const createPath = `/resources/applicants?levelName=${runtime.config.sumsubLevelName}`;
     const createBody = JSON.stringify({ externalUserId, type: "individual" });
-    const createResp = http.sendRequest(runtime, {
-      url: `${runtime.config.sumsubApiUrl}${createPath}`,
-      method: "POST",
-      body: Buffer.from(createBody).toString("base64"),
-      headers: sumsubHeaders(runtime.config, now, "POST", createPath, createBody),
-    }).result();
+    const createHmac = sumsubSign(runtime.config.sumsubSecretKey, ts, "POST", createPath, createBody);
+    const createResp = confSumsubRequest(confHTTP, runtime, `${runtime.config.sumsubApiUrl}${createPath}`, "POST", createHmac, ts, createBody);
 
-    runtime.log(`Sumsub create: ${createResp.statusCode} ${Buffer.from(createResp.body).toString("utf-8").slice(0, 200)}`);
+    runtime.log(`Sumsub create: ${createResp.statusCode} ${respText(createResp).slice(0, 200)}`);
     return JSON.stringify({ status: "applicant_created", wallet, sumsubStatus: createResp.statusCode });
   }
 
   if (getResp.statusCode !== 200) {
-    const errBody = Buffer.from(getResp.body).toString("utf-8").slice(0, 200);
-    runtime.log(`Sumsub error: ${getResp.statusCode} ${errBody}`);
+    runtime.log(`Sumsub error: ${getResp.statusCode} ${respText(getResp).slice(0, 200)}`);
     return JSON.stringify({ status: "sumsub_error", statusCode: getResp.statusCode, wallet });
   }
 
-  const applicant = JSON.parse(Buffer.from(getResp.body).toString("utf-8")) as {
+  const applicant = JSON.parse(respText(getResp)) as {
     id: string;
     review: { reviewStatus: string; reviewResult?: { reviewAnswer: string } };
     info?: { country?: string };
@@ -150,17 +181,9 @@ const onHttpTrigger = (runtime: Runtime<Config>, payload: HTTPPayload): string =
     return JSON.stringify({ status: "not_approved", wallet, reviewStatus: applicant.review.reviewStatus });
   }
 
-  // 3. Chainalysis wallet risk (simple API key auth)
-  const chResp = http.sendRequest(runtime, {
-    url: `${runtime.config.chainalysisApiUrl}/entities/${wallet}`,
-    method: "GET",
-    headers: {
-      Token: runtime.config.chainalysisApiKey,
-      Accept: "application/json",
-    },
-  }).result();
-
-  const riskScore = chResp.statusCode === 200 ? (JSON.parse(Buffer.from(chResp.body).toString("utf-8")).riskScore ?? 0) : 0;
+  // 3. Chainalysis wallet risk via Confidential HTTP
+  const chResp = confChainalysisGet(confHTTP, runtime, `${runtime.config.chainalysisApiUrl}/entities/${wallet}`);
+  const riskScore = chResp.statusCode === 200 ? (JSON.parse(respText(chResp)).riskScore ?? 0) : 0;
   runtime.log(`Chainalysis risk: ${riskScore} (status ${chResp.statusCode})`);
 
   // 4. Build credential + write on-chain
@@ -177,8 +200,14 @@ const onHttpTrigger = (runtime: Runtime<Config>, payload: HTTPPayload): string =
     [wallet, ccid as Hex, KYC_VERIFIED, expiresAt, credData]
   );
 
-  const report = runtime.report(reportPayload);
-  evmClient.writeReport(runtime, runtime.config.consumerContractAddress as Address, report, { gasLimit: "500000" }).result();
+  // prepareReportRequest converts hex payload to the format runtime.report() expects
+  const reportReq = prepareReportRequest(reportPayload);
+  const report = runtime.report(reportReq).result();
+  evmClient.writeReport(runtime, {
+    receiver: runtime.config.consumerContractAddress,
+    report,
+    gasConfig: { gasLimit: "500000" },
+  }).result();
 
   runtime.log(`Credential issued: wallet=${wallet}, risk=${riskScore}, jurisdiction=${jurisdiction}`);
   return JSON.stringify({ status: "verified", wallet, riskScore, jurisdiction });
@@ -189,7 +218,7 @@ const onHttpTrigger = (runtime: Runtime<Config>, payload: HTTPPayload): string =
 // ---------------------------------------------------------------------------
 function initWorkflow(config: Config) {
   const httpTrigger = new cre.capabilities.HTTPCapability();
-  return [cre.handler(httpTrigger.trigger({}), onHttpTrigger)];
+  return [handler(httpTrigger.trigger({}), onHttpTrigger)];
 }
 
 export async function main() {

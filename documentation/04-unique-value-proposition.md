@@ -108,7 +108,7 @@ The engine resolves this by separating the compliance infrastructure from the pr
 
 **Secondary:** Any on-chain protocol that needs per-trade compliance gating and wants to offer compliance-as-infrastructure to their ecosystem.
 
-**Arc ecosystem specifically:** Deployed on Arc (Circle) as a foundational DeFi building block. Arc is purpose-built for institutional finance with USDC-native gas and regulatory-first design. Open Compliance Layer enables every protocol on Arc to serve regulated institutions without building compliance infrastructure ��� making Arc the first chain where institutional DeFi is compliance-ready out of the box.
+**Arc ecosystem specifically:** Deployed on Arc (Circle) as a foundational DeFi building block. Arc is purpose-built for institutional finance with USDC-native gas and regulatory-first design. Open Compliance Network enables every protocol on Arc to serve regulated institutions without building compliance infrastructure ��� making Arc the first chain where institutional DeFi is compliance-ready out of the box.
 
 **Not for:** Single-operator centralized exchanges who control all parties and trust their own backend (they should just use Sumsub + Chainalysis directly).
 

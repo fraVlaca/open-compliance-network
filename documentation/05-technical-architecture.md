@@ -115,9 +115,20 @@ The workflow ID is a hash of the compiled binary + configuration. This means:
 - The consumer contract pins a specific workflow ID — mismatched IDs are rejected
 - Workflow updates are visible on-chain (new ID registered in Workflow Registry)
 
-### Why Three Separate Workflows
+### Four Workflows
 
-The engine uses three dedicated workflows rather than a monolithic one:
+The engine uses four dedicated CRE workflows:
+
+| Workflow | Trigger | Purpose | Confidential HTTP |
+|----------|---------|---------|-------------------|
+| **D: Token Generation** | HTTP | Generate Sumsub access token for KYC iframe | `{{.sumsubAppToken}}` for App Token |
+| **A: Identity Verification** | HTTP | Pull Sumsub status + Chainalysis risk, write credential on-chain | `{{.sumsubAppToken}}` + `{{.chainalysisApiKey}}` |
+| **B: Per-Trade Compliance** | EVM Log | Per-trade sanctions/risk checks, write report on-chain | `{{.sumsubAppToken}}` + `{{.chainalysisApiKey}}` |
+| **C: Identity Audit** | HTTP | Fetch encrypted PII for integrators | `{{.sumsubAppToken}}` + `encryptOutput: true` (AES-GCM) |
+
+### Why Four Separate Workflows
+
+The engine uses four dedicated workflows rather than a monolithic one:
 
 - **CRE constraint: one trigger type per workflow.** The per-trade workflow (EVM Log Trigger) cannot share a workflow with the identity workflows (HTTP Trigger).
 - **Update isolation.** Each workflow has its own workflowId (hash of the binary). Fixing a bug in the audit workflow doesn't change the verification workflow's ID — the credential consumer contract is unaffected.
@@ -178,6 +189,50 @@ Full AuditRecords are uploaded to IPFS via Pinata at trade time by CRE Workflow 
 ### Sumsub — KYC/AML Identity Data (PII)
 
 PII never enters the audit trail. It stays in Sumsub and is accessed on-demand via CRE Workflow C (Confidential HTTP in TEE). See [07 - Audit Trail Architecture](./07-audit-trail-architecture.md) for the full storage and retrieval design.
+
+## Data Flow — Identity Verification Lifecycle
+
+Before a user can trade, they must be KYC-verified. This is orchestrated by the **Backend SDK** calling two CRE workflows:
+
+```
+Integrator Frontend          Integrator Backend          CRE (TEE)                    On-chain
+(@ocn/react)                 (@ocn/node-sdk)                  |                           |
+                                    |                         |                           |
+  User clicks "Get Verified"        |                         |                           |
+       |                            |                         |                           |
+       |-- POST /api/kyc/token ---->|                         |                           |
+       |                            |-- HTTP trigger -------> |                           |
+       |                            |                         | Workflow D: Token Gen      |
+       |                            |                         | verify integrator -------> | (EVM read)
+       |                            |                         | Conf HTTP -> Sumsub API    |
+       |                            |                         |   {{.sumsubAppToken}}      |
+       |<-- { accessToken } --------|<-- token returned ----- |                           |
+       |                            |                         |                           |
+       |-- render Sumsub iframe     |                         |                           |
+       |   user uploads docs        |                         |                           |
+       |   user takes selfie        |                         |                           |
+       |   Sumsub SDK: onComplete   |                         |                           |
+       |                            |                         |                           |
+       |-- POST /api/kyc/verify --->|                         |                           |
+       |                            |-- HTTP trigger -------> |                           |
+       |                            |                         | Workflow A: Verify         |
+       |                            |                         | Conf HTTP -> Sumsub        |
+       |                            |                         | Conf HTTP -> Chainalysis   |
+       |                            |                         | if GREEN:                  |
+       |                            |                         |   build credential (CCID)  |
+       |                            |                         |   onReport() ------------> | credential
+       |<-- { verified, txHash } ---|                         |                           | written
+       |                            |                         |                           |
+       |-- poll isVerified() -------+-------------------------+-------------------------> | (EVM read)
+       |<-- verified! --------------|                         |                           |
+```
+
+**Key privacy properties:**
+- Sumsub App Token stays in Vault DON / TEE enclave (injected via `{{.sumsubAppToken}}`)
+- Chainalysis API Key stays in Vault DON (injected via `{{.chainalysisApiKey}}`)
+- The integrator backend holds NO provider credentials — only their wallet private key
+- HMAC-SHA256 for Sumsub is computed in the workflow handler, App Token injected in TEE
+- The frontend never communicates with CRE or Sumsub APIs directly
 
 ## Data Flow — Complete Trade Lifecycle
 
