@@ -39,7 +39,7 @@ export default function WorkflowNode({ data }: NodeProps) {
         {/* TEE Header */}
         <div className="flex items-center gap-2 mb-1">
           <Lock className={`w-3.5 h-3.5 ${state === 'active' ? 'text-tee-400' : 'text-slate-500'}`} />
-          <span className="text-[10px] font-mono text-tee-400 uppercase tracking-wider">TEE Enclave</span>
+          <span className="text-[10px] font-mono text-tee-400 uppercase tracking-wider">CRE Workflow</span>
         </div>
 
         {/* Workflow name */}

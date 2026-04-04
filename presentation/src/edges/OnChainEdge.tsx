@@ -45,6 +45,16 @@ export default function OnChainEdge({
   return (
     <>
       <g>
+        {/* Idle: faint dashed line (visible before animation) */}
+        <path
+          d={path}
+          stroke="var(--slate-600, #475569)"
+          strokeWidth={1.5}
+          strokeDasharray="6 4"
+          fill="none"
+          opacity={0.3}
+        />
+
         {/* Draw-on effect via strokeDashoffset */}
         <motion.path
           ref={pathRef}

@@ -24,7 +24,7 @@ export default function CodeNode({ data }: NodeProps) {
 
   return (
     <motion.div
-      className={`rounded-lg border-2 bg-surface-900 px-4 py-3 min-w-[300px] max-w-[400px] ${borderColor}`}
+      className={`rounded-lg border-2 bg-surface-900 px-4 py-3 min-w-[200px] max-w-[400px] ${borderColor}`}
       animate={state === 'active' ? {
         boxShadow: ['0 0 4px rgba(6,182,212,0.2)', '0 0 12px rgba(6,182,212,0.3)', '0 0 4px rgba(6,182,212,0.2)'],
       } : { boxShadow: '0 0 0px rgba(6,182,212,0)' }}

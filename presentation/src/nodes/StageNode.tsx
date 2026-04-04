@@ -42,16 +42,16 @@ export default function StageNode({ data }: NodeProps) {
   return (
     <div className="flex flex-col items-center gap-2">
       <motion.div
-        className={`w-12 h-12 rounded-full border-2 flex items-center justify-center cursor-pointer ${borderColor} ${bgColor}`}
+        className={`w-16 h-16 rounded-full border-2 flex items-center justify-center cursor-pointer ${borderColor} ${bgColor}`}
         animate={
           state === 'active' ? {
             boxShadow: [
               '0 0 0 0px rgba(245, 158, 11, 0)',
-              '0 0 0 8px rgba(245, 158, 11, 0.15)',
+              '0 0 0 12px rgba(245, 158, 11, 0.15)',
               '0 0 0 0px rgba(245, 158, 11, 0)',
             ],
           } : state === 'completed' ? {
-            boxShadow: '0 0 0 6px rgba(245, 158, 11, 0.12)',
+            boxShadow: '0 0 0 8px rgba(245, 158, 11, 0.12)',
           } : {
             boxShadow: '0 0 0 0px rgba(245, 158, 11, 0)',
           }
@@ -69,19 +69,19 @@ export default function StageNode({ data }: NodeProps) {
               animate={{ scale: 1 }}
               transition={{ type: 'spring', stiffness: 300, damping: 20 }}
             >
-              <Check className="w-5 h-5 text-positive-500" />
+              <Check className="w-7 h-7 text-positive-500" />
             </motion.div>
           ) : Icon ? (
             <motion.div key="icon" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
               <Icon
-                className={`w-5 h-5 ${state === 'active' ? '' : 'text-slate-400'}`}
+                className={`w-7 h-7 ${state === 'active' ? '' : 'text-slate-400'}`}
                 {...(state === 'active' ? { color: ACTIVE_COLOR } : {})}
               />
             </motion.div>
           ) : null}
         </AnimatePresence>
       </motion.div>
-      <span className={`text-xs font-mono ${
+      <span className={`text-sm font-mono font-medium ${
         state === 'active' ? 'text-warning-400' :
         state === 'completed' ? 'text-positive-400' :
         'text-slate-500'
