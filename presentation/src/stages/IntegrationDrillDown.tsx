@@ -40,7 +40,7 @@ const sidePanels: Record<string, SidePanelData> = {
     stage: 'Integration', beat: 'Pattern 3', title: 'Async + Auto-Callback',
     json: {
       'Code': 'emit ComplianceCheckRequested(tradeId, ...)',
-      'Flow': 'swap() → emit event → CRE picks up → all checks in TEE → DON consensus → writeReport → onComplianceApproved(tradeId) → trade executes',
+      'Flow': 'swap() → emit event → CRE picks up → all checks in CRE → DON consensus → writeReport → onComplianceApproved(tradeId) → trade executes',
       'Best for': 'Deep per-trade checks: sanctions + counterparty risk + jurisdiction + structuring',
       'User experience': 'ONE transaction. CRE auto-callbacks execute the trade.',
       'Deployed': `EscrowSwap on Arc Testnet: ${DEMO.contracts.escrowSwap}`,

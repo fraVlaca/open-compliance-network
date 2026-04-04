@@ -10,71 +10,139 @@ import { edgeTypes } from '../edges/edgeTypes'
 import AutoFitView from '../components/AutoFitView'
 import type { StageSequence, FlowState, NodeState, EdgeState, SidePanelData } from '../types'
 
+// ── Side panels ──────────────────────────────────────────────────────
+
 const sidePanels: Record<string, SidePanelData> = {
   workflowC: {
     stage: 'Audit', beat: 'Workflow C — Identity Audit', title: 'KYC/AML Data Access',
     json: {
       'Trigger': 'Integrator signs HTTP request with wallet',
-      'CRE Workflow C (TEE)': {
-        '1': 'Read IntegratorRegistry → get appId, workspace, role',
-        '2': 'Check CredentialRegistry → does user belong to requester scope?',
-        '3': 'Confidential HTTP → Sumsub: fetch via namespaced externalUserId',
-        '4': 'Return encrypted to integrator public key',
+      'Inside CRE': {
+        '1. Read IntegratorRegistry': 'Get appId, workspace, role from on-chain',
+        '2. Check scoping': 'Does this user belong to requester\'s scope?',
+        '3. Confidential HTTP (TEE) → Sumsub': 'Fetch via namespaced externalUserId',
+        '4. Encrypt response': 'AES-GCM encrypted to integrator\'s public key',
       },
-      'Scoping': { 'Broker': 'Only users they onboarded', 'LP': 'Only users in their trades', 'Protocol': 'All users in workspace' },
-      'PII never stored': 'Fetched from Sumsub on-demand in TEE. Never in audit trail.',
+      'Scoping rules': { 'Broker': 'Only users they onboarded (brokerAppId)', 'LP': 'Only users in their trades (lpAppId)', 'Protocol': 'All users in workspace' },
+      'PII never stored': 'Fetched from Sumsub on-demand. Lives in CRE for milliseconds. Returns encrypted.',
     },
-    highlightFields: ['CRE Workflow C (TEE)', 'Scoping', 'PII never stored'],
+    highlightFields: ['Inside CRE', 'Scoping rules', 'PII never stored'],
   },
-  reconciliation: {
-    stage: 'Audit', beat: 'Audit Reconciliation', title: 'Trust Verification Flow',
+  readReport: {
+    stage: 'Audit', beat: 'Step 1 — Read Report', title: 'On-Chain Compliance Report',
     json: {
-      'Step 1 — Read on-chain report': 'getReport(tradeId) → { approved, riskScore, auditHash, ipfsCid, workflowId }',
-      'Step 2 — Verify workflow code': { 'Source': 'Open source on GitHub', 'Compile': 'cre workflow build → binary hash', 'Compare': 'hash == on-chain workflowId? → This exact code ran' },
-      'Step 3 — Fetch IPFS record': 'GET gateway.pinata.cloud/ipfs/{cid} → full AuditRecord',
-      'Step 4 — Verify hash': 'keccak256(record) === on-chain auditHash? → Data untampered',
-      'Result': 'You know WHAT code ran + WHAT it decided + the FULL evidence + ALL immutable',
+      'Call': 'ComplianceReportConsumer.getReport(tradeId)',
+      'Returns': {
+        approved: true,
+        riskScore: 2,
+        workflowId: '0x7a3b...  ← hash of the workflow binary',
+        auditHash: '0x9f2e...   ← keccak256 of full AuditRecord',
+        ipfsCid: 'QmXyz...      ← IPFS content identifier',
+        timestamp: 1743696000,
+      },
+      'DON-signed': 'This report was threshold-signed by 21 Chainlink nodes',
+      'Immutable': 'Cannot be altered. On-chain forever.',
     },
-    highlightFields: ['Step 2 — Verify workflow code', 'Step 4 — Verify hash', 'Result'],
+    highlightFields: ['Returns', 'DON-signed'],
+  },
+  verifyCode: {
+    stage: 'Audit', beat: 'Step 2 — Verify Code', title: 'Was This the Right Code?',
+    json: {
+      '1. Fetch source': 'Clone the open-source workflow from GitHub',
+      '2. Compile locally': 'cre workflow build → produces WASM binary',
+      '3. Hash the binary': 'keccak256(binary + config) → local hash',
+      '4. Compare': 'localHash === report.workflowId?',
+      '✓ Match': 'This EXACT code produced the compliance decision. If even one line was different, the hash would not match.',
+      'Self-binding': 'The operator cannot change the code without the workflowId changing — visible to everyone.',
+    },
+    highlightFields: ['4. Compare', '✓ Match', 'Self-binding'],
+  },
+  verifyAudit: {
+    stage: 'Audit', beat: 'Step 3 — Verify Audit', title: 'Is the Evidence Real?',
+    json: {
+      '1. Extract ipfsCid': 'From the on-chain report',
+      '2. Fetch from IPFS': 'GET https://gateway.pinata.cloud/ipfs/{cid}',
+      '3. Get full AuditRecord': 'All provider responses, jurisdiction rules, risk scores — point-in-time snapshot',
+      '4. Hash the record': 'keccak256(JSON.stringify(auditRecord))',
+      '5. Compare': 'computedHash === report.auditHash?',
+      '✓ Match': 'The evidence is exactly what the DON produced at trade time. Content-addressed + hash-verified = triple tamper-proof.',
+      'Three guarantees': 'DON consensus (nodes agreed) + on-chain immutability (can\'t alter) + IPFS content addressing (CID IS the hash)',
+    },
+    highlightFields: ['5. Compare', '✓ Match', 'Three guarantees'],
   },
   selfBinding: {
-    stage: 'Audit', beat: 'Self-Binding', title: 'Why This Matters',
+    stage: 'Audit', beat: 'Trust Model', title: 'Self-Binding Architecture',
     json: {
+      'What we proved': {
+        'Code': 'workflowId matches open-source → this exact code ran',
+        'Decision': 'On-chain report is DON-signed → 21 nodes agreed',
+        'Evidence': 'auditHash matches IPFS record → data is untampered',
+      },
       'Self-binding': 'Open code + pinned workflowId + DON consensus = operator CANNOT cheat',
-      'If code changes': 'New binary → new workflowId → consumer contract rejects',
       'Centralized alt': 'Trust one server. Could selectively approve. No proof otherwise.',
-      'What we built': '≥2/3 of 21 DON nodes. Public code. Immutable audit trail per trade.',
-      'DECO (future)': 'ZK proof of TLS — mathematical proof Sumsub returned "verified"',
+      'DECO (future)': 'ZK proof of TLS session — mathematical proof Sumsub returned "verified"',
     },
-    highlightFields: ['Self-binding', 'What we built'],
+    highlightFields: ['What we proved', 'Self-binding'],
   },
 }
 
+// ── Sequence ─────────────────────────────────────────────────────────
+
 function buildAuditSequence(): StageSequence {
   return [
-    // LEFT: Workflow C
+    // ═══ LEFT: Workflow C — KYC/AML data access ═══
     { delay: 300, sidePanel: sidePanels.workflowC, apply: (s: FlowState) => ({ nodeStates: { ...s.nodeStates, integrator: 'active' as NodeState } }) },
+    // Integrator → CRE
     { delay: 800, apply: (s: FlowState) => ({ nodeStates: { ...s.nodeStates, integrator: 'completed' as NodeState }, edgeStates: { ...s.edgeStates, 'integrator-wfC': 'active' as EdgeState } }) },
     { delay: 500, apply: (s: FlowState) => ({ edgeStates: { ...s.edgeStates, 'integrator-wfC': 'completed' as EdgeState }, nodeStates: { ...s.nodeStates, wfC: 'active' as NodeState, teeLeft: 'active' as NodeState } }) },
-    { delay: 600, apply: (s: FlowState) => ({ edgeStates: { ...s.edgeStates, 'wfC-registry': 'active' as EdgeState } }) },
+    // CRE reads IntegratorRegistry on Arc
+    { delay: 500, apply: (s: FlowState) => ({ edgeStates: { ...s.edgeStates, 'wfC-registry': 'active' as EdgeState } }) },
     { delay: 400, apply: (s: FlowState) => ({ edgeStates: { ...s.edgeStates, 'wfC-registry': 'completed' as EdgeState }, nodeStates: { ...s.nodeStates, registryCheck: 'active' as NodeState } }) },
-    { delay: 600, apply: (s: FlowState) => ({ nodeStates: { ...s.nodeStates, registryCheck: 'completed' as NodeState }, edgeStates: { ...s.edgeStates, 'wfC-sumsub': 'active' as EdgeState } }) },
+    { delay: 500, apply: (s: FlowState) => ({ nodeStates: { ...s.nodeStates, registryCheck: 'completed' as NodeState } }) },
+    // CRE calls Sumsub (RoundTripEdge — request path)
+    { delay: 300, apply: (s: FlowState) => ({ edgeStates: { ...s.edgeStates, 'wfC-sumsub': 'active' as EdgeState } }) },
     { delay: 500, apply: (s: FlowState) => ({ edgeStates: { ...s.edgeStates, 'wfC-sumsub': 'completed' as EdgeState }, nodeStates: { ...s.nodeStates, sumsubFetch: 'active' as NodeState } }) },
-    { delay: 700, apply: (s: FlowState) => ({ nodeStates: { ...s.nodeStates, sumsubFetch: 'completed' as NodeState }, edgeStates: { ...s.edgeStates, 'wfC-encrypted': 'active' as EdgeState } }) },
-    { delay: 500, apply: (s: FlowState) => ({ edgeStates: { ...s.edgeStates, 'wfC-encrypted': 'completed' as EdgeState }, nodeStates: { ...s.nodeStates, wfC: 'completed' as NodeState, teeLeft: 'completed' as NodeState, encryptedResult: 'active' as NodeState } }) },
-    { delay: 800, apply: (s: FlowState) => ({ nodeStates: { ...s.nodeStates, encryptedResult: 'completed' as NodeState } }) },
-    // RIGHT: Reconciliation
-    { delay: 600, sidePanel: sidePanels.reconciliation, apply: (s: FlowState) => ({ nodeStates: { ...s.nodeStates, readReport: 'active' as NodeState } }) },
-    { delay: 800, apply: (s: FlowState) => ({ nodeStates: { ...s.nodeStates, readReport: 'completed' as NodeState }, edgeStates: { ...s.edgeStates, 'report-verifyCode': 'active' as EdgeState } }) },
-    { delay: 400, apply: (s: FlowState) => ({ edgeStates: { ...s.edgeStates, 'report-verifyCode': 'completed' as EdgeState }, nodeStates: { ...s.nodeStates, verifyCode: 'active' as NodeState } }) },
-    { delay: 1000, apply: (s: FlowState) => ({ nodeStates: { ...s.nodeStates, verifyCode: 'completed' as NodeState }, edgeStates: { ...s.edgeStates, 'report-fetchIpfs': 'active' as EdgeState } }) },
-    { delay: 400, apply: (s: FlowState) => ({ edgeStates: { ...s.edgeStates, 'report-fetchIpfs': 'completed' as EdgeState }, nodeStates: { ...s.nodeStates, fetchIpfs: 'active' as NodeState } }) },
-    { delay: 800, apply: (s: FlowState) => ({ nodeStates: { ...s.nodeStates, fetchIpfs: 'completed' as NodeState }, edgeStates: { ...s.edgeStates, 'ipfs-verifyHash': 'active' as EdgeState } }) },
-    { delay: 400, apply: (s: FlowState) => ({ edgeStates: { ...s.edgeStates, 'ipfs-verifyHash': 'completed' as EdgeState }, nodeStates: { ...s.nodeStates, verifyHash: 'active' as NodeState } }) },
-    { delay: 1000, sidePanel: sidePanels.selfBinding, apply: (s: FlowState) => ({ nodeStates: { ...s.nodeStates, verifyHash: 'completed' as NodeState, trustTable: 'active' as NodeState } }) },
+    // Sumsub returns KYC data (RoundTripEdge — response path)
+    { delay: 700, apply: (s: FlowState) => ({ nodeStates: { ...s.nodeStates, sumsubFetch: 'completed' as NodeState }, edgeStates: { ...s.edgeStates, 'sumsub-wfC-return': 'active' as EdgeState } }) },
+    { delay: 500, apply: (s: FlowState) => ({ edgeStates: { ...s.edgeStates, 'sumsub-wfC-return': 'completed' as EdgeState } }) },
+    // CRE encrypts → sends back to integrator (RoundTripEdge — response path)
+    { delay: 300, apply: (s: FlowState) => ({ edgeStates: { ...s.edgeStates, 'wfC-integrator-return': 'active' as EdgeState } }) },
+    { delay: 600, apply: (s: FlowState) => ({ edgeStates: { ...s.edgeStates, 'wfC-integrator-return': 'completed' as EdgeState }, nodeStates: { ...s.nodeStates, wfC: 'completed' as NodeState, teeLeft: 'completed' as NodeState, integrator: 'active' as NodeState } }) },
+    { delay: 600, apply: (s: FlowState) => ({ nodeStates: { ...s.nodeStates, integrator: 'completed' as NodeState } }) },
+
+    // ═══ RIGHT: Audit trail reconciliation ═══
+    // LP backend starts verification
+    { delay: 600, sidePanel: sidePanels.readReport, apply: (s: FlowState) => ({ nodeStates: { ...s.nodeStates, lpBackend: 'active' as NodeState } }) },
+    // Step 1: Read on-chain report (RoundTripEdge — request path)
+    { delay: 500, apply: (s: FlowState) => ({ edgeStates: { ...s.edgeStates, 'lp-arcReport': 'active' as EdgeState } }) },
+    { delay: 500, apply: (s: FlowState) => ({ edgeStates: { ...s.edgeStates, 'lp-arcReport': 'completed' as EdgeState }, nodeStates: { ...s.nodeStates, arcReport: 'active' as NodeState } }) },
+    // Report returns data (RoundTripEdge — response path)
+    { delay: 600, apply: (s: FlowState) => ({ nodeStates: { ...s.nodeStates, arcReport: 'completed' as NodeState }, edgeStates: { ...s.edgeStates, 'arcReport-lp-return': 'active' as EdgeState } }) },
+    { delay: 500, apply: (s: FlowState) => ({ edgeStates: { ...s.edgeStates, 'arcReport-lp-return': 'completed' as EdgeState } }) },
+
+    // Step 2: Verify workflow code (forward chain: LP → GitHub → verifyWfId)
+    { delay: 400, sidePanel: sidePanels.verifyCode, apply: (s: FlowState) => ({ edgeStates: { ...s.edgeStates, 'lp-github': 'active' as EdgeState } }) },
+    { delay: 500, apply: (s: FlowState) => ({ edgeStates: { ...s.edgeStates, 'lp-github': 'completed' as EdgeState }, nodeStates: { ...s.nodeStates, github: 'active' as NodeState } }) },
+    // Source code flows down to verification
+    { delay: 800, apply: (s: FlowState) => ({ nodeStates: { ...s.nodeStates, github: 'completed' as NodeState }, edgeStates: { ...s.edgeStates, 'github-verify': 'active' as EdgeState } }) },
+    { delay: 500, apply: (s: FlowState) => ({ edgeStates: { ...s.edgeStates, 'github-verify': 'completed' as EdgeState }, nodeStates: { ...s.nodeStates, verifyWfId: 'active' as NodeState } }) },
+    { delay: 800, apply: (s: FlowState) => ({ nodeStates: { ...s.nodeStates, verifyWfId: 'completed' as NodeState } }) },
+
+    // Step 3: Fetch IPFS + verify audit hash (forward chain: LP → IPFS → verifyAuditHash)
+    { delay: 400, sidePanel: sidePanels.verifyAudit, apply: (s: FlowState) => ({ edgeStates: { ...s.edgeStates, 'lp-ipfs': 'active' as EdgeState } }) },
+    { delay: 500, apply: (s: FlowState) => ({ edgeStates: { ...s.edgeStates, 'lp-ipfs': 'completed' as EdgeState }, nodeStates: { ...s.nodeStates, ipfsRecord: 'active' as NodeState } }) },
+    // IPFS data flows down to verification
+    { delay: 800, apply: (s: FlowState) => ({ nodeStates: { ...s.nodeStates, ipfsRecord: 'completed' as NodeState }, edgeStates: { ...s.edgeStates, 'ipfs-verify': 'active' as EdgeState } }) },
+    { delay: 500, apply: (s: FlowState) => ({ edgeStates: { ...s.edgeStates, 'ipfs-verify': 'completed' as EdgeState }, nodeStates: { ...s.nodeStates, verifyAuditHash: 'active' as NodeState } }) },
+    { delay: 800, apply: (s: FlowState) => ({ nodeStates: { ...s.nodeStates, verifyAuditHash: 'completed' as NodeState } }) },
+
+    // All verified
+    { delay: 500, sidePanel: sidePanels.selfBinding, apply: (s: FlowState) => ({ nodeStates: { ...s.nodeStates, lpBackend: 'completed' as NodeState, trustTable: 'active' as NodeState } }) },
     { delay: 1500, apply: (s: FlowState) => ({ nodeStates: { ...s.nodeStates, trustTable: 'completed' as NodeState } }) },
   ]
 }
+
+// ── Component ────────────────────────────────────────────────────────
 
 export default function AuditDrillDown() {
   const { state, registerSequence } = usePlayback()
@@ -84,56 +152,93 @@ export default function AuditDrillDown() {
   useEffect(() => { registerSequence('audit', buildAuditSequence()) }, [registerSequence])
 
   const nodes: Node[] = useMemo(() => [
-    // ═══ LEFT: Workflow C ═══
-    { id: 'teeLeft', type: 'creEnclaveNode', position: { x: 100, y: 40 },
-      style: { zIndex: -1, width: 320, height: 320 },
-      data: { label: 'CRE / TEE — Workflow C', state: nodeStates.teeLeft || 'idle' },
+    // ═══════════════════════════════════════════════════
+    // LEFT: Workflow C — KYC/AML Data Access
+    // ═══════════════════════════════════════════════════
+
+    // TEE enclave container
+    { id: 'teeLeft', type: 'creEnclaveNode', position: { x: 110, y: 30 },
+      style: { zIndex: -1, width: 340, height: 250 },
+      data: { label: 'CRE — Workflow C', state: nodeStates.teeLeft || 'idle' },
       draggable: false, selectable: false },
 
-    { id: 'integrator', type: 'actorNode', position: { x: 0, y: 140 },
+    // Arc container around IntegratorRegistry
+    { id: 'arcLeft', type: 'chainNode', position: { x: 90, y: 310 },
+      style: { zIndex: -1, width: 190, height: 90 },
+      data: { chainName: 'Arc', brandColor: '#06b6d4', showHeader: true, state: 'idle' as NodeState },
+      draggable: false, selectable: false },
+
+    // Integrator (outside, left)
+    { id: 'integrator', type: 'actorNode', position: { x: 0, y: 120 },
       data: { label: 'Integrator', role: 'broker', state: nodeStates.integrator || 'idle' },
       draggable: false, selectable: false },
 
-    { id: 'wfC', type: 'workflowNode', position: { x: 120, y: 90 },
+    // Workflow C (inside TEE)
+    { id: 'wfC', type: 'workflowNode', position: { x: 130, y: 80 },
       data: { label: 'Workflow C', description: 'Identity Audit', state: nodeStates.wfC || 'idle',
-        checks: ['Read IntegratorRegistry', 'Check scoping (appId)', 'Fetch from Sumsub', 'Encrypt to integrator key'] },
+        checks: ['Read IntegratorRegistry', 'Check scoping (appId)', 'Fetch from Sumsub', 'Encrypt response'] },
       draggable: false, selectable: false },
 
-    { id: 'registryCheck', type: 'registryNode', position: { x: 120, y: 280 },
+    // IntegratorRegistry (inside Arc)
+    { id: 'registryCheck', type: 'registryNode', position: { x: 110, y: 340 },
       data: { label: 'IntegratorRegistry', state: nodeStates.registryCheck || 'idle' },
       draggable: false, selectable: false },
 
-    { id: 'sumsubFetch', type: 'providerNode', position: { x: 290, y: 280 },
+    // Sumsub (inside TEE, right side)
+    { id: 'sumsubFetch', type: 'providerNode', position: { x: 310, y: 190 },
       data: { label: 'Sumsub', provider: 'sumsub', purpose: 'Fetch KYC/AML', state: nodeStates.sumsubFetch || 'idle' },
       draggable: false, selectable: false },
 
-    { id: 'encryptedResult', type: 'actorNode', position: { x: 0, y: 310 },
-      data: { label: 'Encrypted Result', role: 'broker', state: nodeStates.encryptedResult || 'idle' },
+    // ═══════════════════════════════════════════════════
+    // RIGHT: Audit Trail Reconciliation
+    // Full verification flow with data flowing between systems
+    // ═══════════════════════════════════════════════════
+
+    // LP/Integrator Backend (top center — drives all verification)
+    { id: 'lpBackend', type: 'actorNode', position: { x: 680, y: 10 },
+      data: { label: 'LP Backend', role: 'lp', state: nodeStates.lpBackend || 'idle' },
       draggable: false, selectable: false },
 
-    // ═══ RIGHT: Reconciliation ═══
-    { id: 'readReport', type: 'contractNode', position: { x: 490, y: 30 },
-      data: { label: 'Read On-Chain Report', description: 'getReport(tradeId)', state: nodeStates.readReport || 'idle',
-        checks: ['approved: true', 'riskScore: 2', 'auditHash: 0x9f2e...', 'ipfsCid: QmXyz...', 'workflowId: 0x7a3b...'] },
+    // Arc container around on-chain report (below LP)
+    { id: 'arcRight', type: 'chainNode', position: { x: 640, y: 120 },
+      style: { zIndex: -1, width: 230, height: 160 },
+      data: { chainName: 'Arc (on-chain)', brandColor: '#06b6d4', showHeader: true, state: 'idle' as NodeState },
       draggable: false, selectable: false },
 
-    { id: 'verifyCode', type: 'codeNode', position: { x: 480, y: 230 },
-      data: { title: 'Verify Workflow Code', language: 'Shell',
-        code: '# Read open-source code\n# Compile: cre workflow build\n# Compare hash:\nworkflowId == keccak256(binary)\n# ✓ This EXACT code ran',
-        state: nodeStates.verifyCode || 'idle' },
+    // On-chain ComplianceReport
+    { id: 'arcReport', type: 'contractNode', position: { x: 660, y: 160 },
+      data: { label: 'ComplianceReport', description: 'getReport(tradeId)', state: nodeStates.arcReport || 'idle',
+        checks: ['approved: true', 'workflowId: 0x7a3b...', 'auditHash: 0x9f2e...', 'ipfsCid: QmXyz...'] },
       draggable: false, selectable: false },
 
-    { id: 'fetchIpfs', type: 'ipfsNode', position: { x: 740, y: 40 },
-      data: { label: 'Fetch IPFS Record', state: nodeStates.fetchIpfs || 'idle', cid: 'QmXyz...audit' },
+    // GitHub source code (below-left of LP)
+    { id: 'github', type: 'codeNode', position: { x: 500, y: 130 },
+      data: { title: 'GitHub (Open Source)', language: 'Workflow',
+        code: '// Compliance workflow code\n// Anyone can read + compile\n// Hash = workflowId',
+        state: nodeStates.github || 'idle' },
       draggable: false, selectable: false },
 
-    { id: 'verifyHash', type: 'codeNode', position: { x: 700, y: 230 },
-      data: { title: 'Verify Audit Hash', language: 'JavaScript',
-        code: 'const record = fetch(ipfsCid)\nconst hash = keccak256(record)\nhash === report.auditHash\n// ✓ Data untampered',
-        state: nodeStates.verifyHash || 'idle' },
+    // IPFS AuditRecord (below-right of LP)
+    { id: 'ipfsRecord', type: 'ipfsNode', position: { x: 900, y: 150 },
+      data: { label: 'IPFS AuditRecord', state: nodeStates.ipfsRecord || 'idle', cid: 'QmXyz...full-audit' },
       draggable: false, selectable: false },
 
-    { id: 'trustTable', type: 'comparisonNode', position: { x: 440, y: 420 },
+    // Verification step: workflowId check (below GitHub)
+    { id: 'verifyWfId', type: 'codeNode', position: { x: 490, y: 310 },
+      data: { title: '✓ Verify workflowId', language: 'Check',
+        code: 'compiled = build(source)\nhash = keccak256(compiled)\nhash === report.workflowId\n// ✓ Code matches',
+        state: nodeStates.verifyWfId || 'idle' },
+      draggable: false, selectable: false },
+
+    // Verification step: auditHash check (below IPFS)
+    { id: 'verifyAuditHash', type: 'codeNode', position: { x: 880, y: 310 },
+      data: { title: '✓ Verify auditHash', language: 'Check',
+        code: 'record = fetch(ipfsCid)\nhash = keccak256(record)\nhash === report.auditHash\n// ✓ Evidence intact',
+        state: nodeStates.verifyAuditHash || 'idle' },
+      draggable: false, selectable: false },
+
+    // Trust comparison (bottom full width)
+    { id: 'trustTable', type: 'comparisonNode', position: { x: 440, y: 500 },
       data: {
         title: 'Self-Binding: Why Trust This System',
         columns: ['Architecture', 'Trust', 'Verifiable?', 'Self-Binding?'],
@@ -151,15 +256,30 @@ export default function AuditDrillDown() {
   const { editableNodes, onNodesChange, onNodeDoubleClick } = useEditableNodes(nodes, 'audit')
 
   const edges: Edge[] = useMemo(() => [
-    // LEFT: Workflow C
-    { id: 'integrator-wfC', source: 'integrator', target: 'wfC', type: 'dataFlowEdge', data: { state: edgeStates['integrator-wfC'] || 'idle', label: 'signed HTTP' } },
+    // ═══ LEFT: Workflow C ═══
+    // Integrator ↔ wfC (RoundTripEdge — request + encrypted response)
+    { id: 'integrator-wfC', source: 'integrator', target: 'wfC', type: 'roundTripEdge',
+      data: { requestState: edgeStates['integrator-wfC'] || 'idle', responseState: edgeStates['wfC-integrator-return'] || 'idle',
+        requestLabel: 'signed HTTP', responseLabel: 'encrypted KYC data' } },
     { id: 'wfC-registry', source: 'wfC', sourceHandle: 'bottom', target: 'registryCheck', targetHandle: 'top', type: 'dataFlowEdge', data: { state: edgeStates['wfC-registry'] || 'idle' } },
-    { id: 'wfC-sumsub', source: 'wfC', target: 'sumsubFetch', type: 'confidentialEdge', data: { state: edgeStates['wfC-sumsub'] || 'idle' } },
-    { id: 'wfC-encrypted', source: 'wfC', target: 'encryptedResult', type: 'dataFlowEdge', data: { state: edgeStates['wfC-encrypted'] || 'idle', label: 'encrypted' } },
-    // RIGHT: Reconciliation
-    { id: 'report-verifyCode', source: 'readReport', sourceHandle: 'bottom', target: 'verifyCode', type: 'dataFlowEdge', data: { state: edgeStates['report-verifyCode'] || 'idle', label: 'workflowId' } },
-    { id: 'report-fetchIpfs', source: 'readReport', target: 'fetchIpfs', type: 'dataFlowEdge', data: { state: edgeStates['report-fetchIpfs'] || 'idle', label: 'ipfsCid' } },
-    { id: 'ipfs-verifyHash', source: 'fetchIpfs', sourceHandle: 'bottom', target: 'verifyHash', type: 'dataFlowEdge', data: { state: edgeStates['ipfs-verifyHash'] || 'idle', label: 'auditHash' } },
+    // wfC ↔ Sumsub (RoundTripEdge — confidential request + KYC data response)
+    { id: 'wfC-sumsub', source: 'wfC', target: 'sumsubFetch', type: 'roundTripEdge',
+      data: { requestState: edgeStates['wfC-sumsub'] || 'idle', responseState: edgeStates['sumsub-wfC-return'] || 'idle',
+        requestLabel: 'Confidential HTTP (TEE)', responseLabel: 'KYC/AML data', variant: 'confidential' } },
+
+    // ═══ RIGHT: Reconciliation — clean top-to-bottom flows ═══
+    // LP ↔ Arc report (RoundTripEdge — parallel request/response lines)
+    { id: 'lp-arcReport', source: 'lpBackend', sourceHandle: 'bottom', target: 'arcReport', targetHandle: 'top', type: 'roundTripEdge',
+      data: { requestState: edgeStates['lp-arcReport'] || 'idle', responseState: edgeStates['arcReport-lp-return'] || 'idle',
+        requestLabel: 'getReport()', responseLabel: 'workflowId + auditHash + ipfsCid' } },
+
+    // LP → GitHub → verifyWfId (forward chain, data flows down)
+    { id: 'lp-github', source: 'lpBackend', sourceHandle: 'left', target: 'github', type: 'dataFlowEdge', data: { state: edgeStates['lp-github'] || 'idle', label: 'fetch source' } },
+    { id: 'github-verify', source: 'github', target: 'verifyWfId', type: 'dataFlowEdge', data: { state: edgeStates['github-verify'] || 'idle', label: 'source code' } },
+
+    // LP → IPFS → verifyAuditHash (forward chain, data flows down)
+    { id: 'lp-ipfs', source: 'lpBackend', target: 'ipfsRecord', targetHandle: 'top', type: 'dataFlowEdge', data: { state: edgeStates['lp-ipfs'] || 'idle', label: 'fetch by CID' } },
+    { id: 'ipfs-verify', source: 'ipfsRecord', sourceHandle: 'bottom', target: 'verifyAuditHash', targetHandle: 'top', type: 'dataFlowEdge', data: { state: edgeStates['ipfs-verify'] || 'idle', label: 'AuditRecord JSON' } },
   ], [edgeStates])
 
   const { editableEdges, onEdgesChange, onConnect, onReconnect, onEdgeDoubleClick } = useEditableEdges(edges, 'audit')
@@ -167,7 +287,7 @@ export default function AuditDrillDown() {
   return (
     <div className="w-full h-full">
       <ReactFlowProvider>
-        <ReactFlow nodes={editableNodes} edges={editableEdges} onNodesChange={onNodesChange} onEdgesChange={onEdgesChange} onConnect={onConnect} onReconnect={onReconnect} onNodeDoubleClick={onNodeDoubleClick} onEdgeDoubleClick={onEdgeDoubleClick} edgesReconnectable={editMode} deleteKeyCode={editMode ? 'Backspace' : null} nodeTypes={nodeTypes} edgeTypes={edgeTypes} nodesDraggable={editMode} nodesConnectable={editMode} panOnDrag={!editMode} zoomOnScroll={editMode} zoomOnPinch={false} zoomOnDoubleClick={false} preventScrolling={false} fitView fitViewOptions={{ padding: 0.06 }} proOptions={{ hideAttribution: true }} className="bg-surface-900">
+        <ReactFlow nodes={editableNodes} edges={editableEdges} onNodesChange={onNodesChange} onEdgesChange={onEdgesChange} onConnect={onConnect} onReconnect={onReconnect} onNodeDoubleClick={onNodeDoubleClick} onEdgeDoubleClick={onEdgeDoubleClick} edgesReconnectable={editMode} deleteKeyCode={editMode ? 'Backspace' : null} nodeTypes={nodeTypes} edgeTypes={edgeTypes} nodesDraggable={editMode} nodesConnectable={editMode} panOnDrag={!editMode} zoomOnScroll={editMode} zoomOnPinch={false} zoomOnDoubleClick={false} preventScrolling={false} fitView fitViewOptions={{ padding: 0.05 }} proOptions={{ hideAttribution: true }} className="bg-surface-900">
           <AutoFitView trigger={nodeStates} />
         </ReactFlow>
       </ReactFlowProvider>

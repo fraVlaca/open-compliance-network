@@ -14,8 +14,8 @@
   "trade:default": {
     "dimensions": {
       "teeContainer": {
-        "width": 268,
-        "height": 292
+        "width": 255,
+        "height": 277
       },
       "arcContainer": {
         "width": 249,
@@ -36,6 +36,14 @@
       "teeLeft": {
         "width": 255,
         "height": 263
+      },
+      "arcLeft": {
+        "width": 215,
+        "height": 120
+      },
+      "arcRight": {
+        "width": 200,
+        "height": 197
       }
     }
   }

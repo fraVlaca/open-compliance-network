@@ -23,7 +23,7 @@ const sidePanels: Record<string, SidePanelData> = {
     highlightFields: ['Single tx', 'Event'],
   },
   checks: {
-    stage: 'Trade Flow', beat: 'Compliance Checks', title: 'CRE Workflow B (TEE)',
+    stage: 'Trade Flow', beat: 'Compliance Checks', title: 'CRE Workflow B',
     json: {
       'Triggered by': 'EVM Log — ComplianceCheckRequested event',
       'Namespace': 'externalUserId = {workspaceId}:{brokerAppId}:{trader}',
@@ -81,7 +81,7 @@ export default function TradeFlowDrillDown() {
     // --- CRE / TEE container ---
     { id: 'teeContainer', type: 'creEnclaveNode', position: { x: 300, y: 0 },
       style: { zIndex: -1, width: 530, height: 420 },
-      data: { label: 'CRE / TEE Enclave — Workflow B', state: nodeStates.teeContainer || 'idle' },
+      data: { label: 'CRE Enclave — Workflow B', state: nodeStates.teeContainer || 'idle' },
       draggable: false, selectable: false },
 
     // --- Arc container ---
@@ -134,13 +134,13 @@ export default function TradeFlowDrillDown() {
   const edges: Edge[] = useMemo(() => [
     { id: 'user-swap', source: 'user', target: 'swap', type: 'dataFlowEdge', data: { state: edgeStates['user-swap'] || 'idle', label: 'swap()' } },
     { id: 'swap-cre', source: 'swap', target: 'cre', type: 'onChainEdge', data: { state: edgeStates['swap-cre'] || 'idle', label: 'EVM Log' } },
-    { id: 'cre-sumsub', source: 'cre', target: 'sumsub', type: 'confidentialEdge', data: { state: edgeStates['cre-sumsub'] || 'idle' } },
-    { id: 'cre-ch-trader', source: 'cre', target: 'chTrader', type: 'confidentialEdge', data: { state: edgeStates['cre-ch-trader'] || 'idle' } },
-    { id: 'cre-ch-counter', source: 'cre', target: 'chCounter', type: 'confidentialEdge', data: { state: edgeStates['cre-ch-counter'] || 'idle' } },
+    { id: 'cre-sumsub', source: 'cre', target: 'sumsub', type: 'confidentialEdge', data: { state: edgeStates['cre-sumsub'] || 'idle', label: 'Confidential HTTP (TEE)' } },
+    { id: 'cre-ch-trader', source: 'cre', target: 'chTrader', type: 'confidentialEdge', data: { state: edgeStates['cre-ch-trader'] || 'idle', label: 'Confidential HTTP (TEE)' } },
+    { id: 'cre-ch-counter', source: 'cre', target: 'chCounter', type: 'confidentialEdge', data: { state: edgeStates['cre-ch-counter'] || 'idle', label: 'Confidential HTTP (TEE)' } },
     { id: 'cre-rules', source: 'cre', target: 'rules', type: 'dataFlowEdge', data: { state: edgeStates['cre-rules'] || 'idle' } },
     { id: 'cre-report', source: 'cre', sourceHandle: 'bottom', target: 'report', targetHandle: 'top', type: 'onChainEdge', data: { state: edgeStates['cre-report'] || 'idle', label: 'writeReport()' } },
     { id: 'cre-ipfs', source: 'cre', sourceHandle: 'bottom', target: 'ipfs', targetHandle: 'top', type: 'dataFlowEdge', data: { state: edgeStates['cre-ipfs'] || 'idle', label: 'AuditRecord' } },
-    { id: 'report-protocol', source: 'report', target: 'protocol', type: 'callbackEdge', data: { state: edgeStates['report-protocol'] || 'idle', label: 'onComplianceApproved(tradeId)' } },
+    { id: 'report-protocol', source: 'report', sourceHandle: 'bottom', target: 'protocol', targetHandle: 'top', type: 'callbackEdge', data: { state: edgeStates['report-protocol'] || 'idle', label: 'onComplianceApproved(tradeId)' } },
   ], [edgeStates])
 
   const { editableEdges, onEdgesChange, onConnect, onReconnect, onEdgeDoubleClick } = useEditableEdges(edges, 'trade')

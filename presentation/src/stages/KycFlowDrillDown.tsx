@@ -17,15 +17,15 @@ const sidePanels: Record<string, SidePanelData> = {
     highlightFields: ['Result'],
   },
   tee: {
-    stage: 'KYC Flow', beat: 'Confidential Verification', title: 'CRE Workflow A (TEE)',
+    stage: 'KYC Flow', beat: 'Confidential Verification', title: 'CRE Workflow A',
     json: {
       'Trigger': 'Broker frontend signs HTTP request with wallet',
       'IntegratorRegistry': 'On-chain lookup: wallet → {appId, workspace, role}',
-      'Inside TEE': ['Read IntegratorRegistry — get broker appId + workspace', 'Confidential HTTP → Sumsub: verify applicant status', 'Confidential HTTP → Chainalysis: wallet risk score', 'Build credential with brokerAppId in data'],
+      'Inside CRE': ['Read IntegratorRegistry — get broker appId + workspace', 'Confidential HTTP (TEE) → Sumsub: verify applicant status', 'Confidential HTTP (TEE) → Chainalysis: wallet risk score', 'Build credential with brokerAppId in data'],
       'Sumsub namespace': 'externalUserId = "proto_abc:broker_xyz:0xWallet"',
       'Multi-tenancy': 'One Sumsub account. Scoping via namespaced externalUserId. No manual setup per integrator.',
     },
-    highlightFields: ['Inside TEE', 'Sumsub namespace'],
+    highlightFields: ['Inside CRE', 'Sumsub namespace'],
   },
   credential: {
     stage: 'KYC Flow', beat: 'Credential Issuance', title: 'On-Chain Credential',
@@ -70,7 +70,7 @@ export default function KycFlowDrillDown() {
     // --- CRE / TEE container ---
     { id: 'teeContainer', type: 'creEnclaveNode', position: { x: 290, y: 10 },
       style: { zIndex: -1, width: 500, height: 280 },
-      data: { label: 'CRE / TEE Enclave — Workflow A', state: nodeStates.teeContainer || 'idle' },
+      data: { label: 'CRE Enclave — Workflow A', state: nodeStates.teeContainer || 'idle' },
       draggable: false, selectable: false },
 
     // --- Arc container ---
@@ -115,8 +115,8 @@ export default function KycFlowDrillDown() {
   const edges: Edge[] = useMemo(() => [
     { id: 'user-broker', source: 'user', target: 'broker', type: 'dataFlowEdge', data: { state: edgeStates['user-broker'] || 'idle', label: 'Sumsub SDK' } },
     { id: 'broker-cre', source: 'broker', target: 'cre', type: 'dataFlowEdge', data: { state: edgeStates['broker-cre'] || 'idle', label: 'HTTP trigger' } },
-    { id: 'cre-sumsub', source: 'cre', target: 'sumsub', type: 'confidentialEdge', data: { state: edgeStates['cre-sumsub'] || 'idle' } },
-    { id: 'cre-chainalysis', source: 'cre', target: 'chainalysis', type: 'confidentialEdge', data: { state: edgeStates['cre-chainalysis'] || 'idle' } },
+    { id: 'cre-sumsub', source: 'cre', target: 'sumsub', type: 'confidentialEdge', data: { state: edgeStates['cre-sumsub'] || 'idle', label: 'Confidential HTTP (TEE)' } },
+    { id: 'cre-chainalysis', source: 'cre', target: 'chainalysis', type: 'confidentialEdge', data: { state: edgeStates['cre-chainalysis'] || 'idle', label: 'Confidential HTTP (TEE)' } },
     { id: 'cre-consumer', source: 'cre', sourceHandle: 'bottom', target: 'consumer', targetHandle: 'top', type: 'onChainEdge', data: { state: edgeStates['cre-consumer'] || 'idle', label: 'writeReport()' } },
     { id: 'consumer-identity', source: 'consumer', sourceHandle: 'bottom', target: 'identityReg', targetHandle: 'top', type: 'dataFlowEdge', data: { state: edgeStates['consumer-identity'] || 'idle' } },
     { id: 'consumer-credential', source: 'consumer', sourceHandle: 'bottom', target: 'credentialReg', targetHandle: 'top', type: 'dataFlowEdge', data: { state: edgeStates['consumer-credential'] || 'idle' } },

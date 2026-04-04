@@ -28,7 +28,7 @@ const overviewSidePanel = {
   json: {
     'The problem': 'DeFi protocols can\'t add KYC without destroying decentralization (the compliance catch-22)',
     'The solution': 'A compliance oracle — protocols read attestations like Chainlink price feeds. They never touch PII, never run KYC infrastructure, never become regulated entities.',
-    'How it works': 'CRE workflows in TEE → Sumsub + Chainalysis → on-chain credential + IPFS audit trail',
+    'How it works': 'CRE workflows → Sumsub + Chainalysis → on-chain credential + IPFS audit trail',
     'Integration': {
       'Simplest': 'require(consumer.isVerified(wallet))  // 1 line of Solidity',
       'ACE': 'function trade() external runPolicy { }',
@@ -106,9 +106,9 @@ export default function OverviewStage() {
   }
 
   const nodes: Node[] = useMemo(() => {
-    const spacing = 140
-    const startX = 40
-    const y = 180
+    const spacing = 160
+    const startX = 20
+    const y = 160
 
     return LIFECYCLE_STAGES.map((stage, i) => ({
       id: stage.id,

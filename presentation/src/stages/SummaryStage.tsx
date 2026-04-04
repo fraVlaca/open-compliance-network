@@ -38,7 +38,7 @@ export default function SummaryStage() {
           {[
             { label: 'Integration', value: '1 line', sub: 'require(isVerified(wallet))' },
             { label: 'Compliance Providers', value: '3', sub: 'Sumsub + Chainalysis + Notabene' },
-            { label: 'Trust Model', value: '21 nodes', sub: 'BFT consensus + TEE enclave' },
+            { label: 'Trust Model', value: '21 nodes', sub: 'BFT consensus + CRE enclave' },
             { label: 'Protocol PII', value: 'Zero', sub: 'Never held, never processed' },
           ].map((metric, i) => (
             <motion.div key={i} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.6 + i * 0.2 }}
