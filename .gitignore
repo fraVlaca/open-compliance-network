@@ -1,1 +1,26 @@
+# Environment / secrets
 *.env
+.env*
+
+# Dependencies
+node_modules/
+
+# Build artifacts
+dist/
+out/
+cache/
+
+# Foundry
+contracts/cache/
+contracts/out/
+contracts/broadcast/
+
+# OS
+.DS_Store
+
+# IDE
+.vscode/
+.idea/
+
+# CRE
+*.wasm
