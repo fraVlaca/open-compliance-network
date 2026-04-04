@@ -1,0 +1,12 @@
+{
+  "name": "per-trade-compliance",
+  "version": "1.0.0",
+  "scripts": {
+    "cre-compile": "cre-compile"
+  },
+  "dependencies": {
+    "@chainlink/cre-sdk": "latest",
+    "viem": "^2.0.0",
+    "zod": "^3.22.0"
+  }
+}
