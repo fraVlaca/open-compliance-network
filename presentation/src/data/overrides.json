@@ -1,0 +1,34 @@
+{
+  "solution:default": {
+    "dimensions": {
+      "teeContainer": {
+        "width": 275,
+        "height": 277
+      },
+      "arcContainer": {
+        "width": 519,
+        "height": 213
+      }
+    }
+  },
+  "trade:default": {
+    "dimensions": {
+      "teeContainer": {
+        "width": 268,
+        "height": 292
+      },
+      "arcContainer": {
+        "width": 249,
+        "height": 580
+      }
+    }
+  },
+  "kyc:default": {
+    "dimensions": {
+      "teeContainer": {
+        "width": 248,
+        "height": 277
+      }
+    }
+  }
+}
