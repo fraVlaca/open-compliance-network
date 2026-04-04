@@ -128,8 +128,8 @@ export default function IntegratorPage() {
           <Users className="w-6 h-6 text-accent-purple" />
           Integrator Dashboard
         </h1>
-        <p className="text-gray-400 mt-1">
-          Join a workspace as a broker, onboard users, and access compliance data
+        <p className="text-gray-300 mt-1">
+          Join a workspace as a broker, onboard users, and access compliance data.
         </p>
       </div>
 
@@ -173,7 +173,7 @@ export default function IntegratorPage() {
                     type="text"
                     value={verifyTarget}
                     onChange={(e) => setVerifyTarget(e.target.value)}
-                    className="w-full bg-surface-700 border border-surface-600 rounded-lg px-4 py-3 text-white font-mono text-sm focus:outline-none focus:border-accent-blue"
+                    className="input-base font-mono text-sm"
                     placeholder={address || "0x..."}
                   />
                 </div>
@@ -257,7 +257,7 @@ export default function IntegratorPage() {
                 type="text"
                 value={lookupAddress}
                 onChange={(e) => { setLookupAddress(e.target.value); setLookupResult(null); }}
-                className="flex-1 bg-surface-700 border border-surface-600 rounded-lg px-4 py-3 text-white font-mono text-sm focus:outline-none focus:border-accent-blue"
+                className="input-base flex-1 font-mono text-sm"
                 placeholder="0x... wallet address"
               />
               <button onClick={handleLookup} className="btn-primary flex items-center gap-2">
@@ -311,7 +311,7 @@ export default function IntegratorPage() {
               type="text"
               value={workspaceId}
               onChange={(e) => setWorkspaceId(e.target.value)}
-              className="w-full bg-surface-700 border border-surface-600 rounded-lg px-4 py-3 text-white font-mono text-sm focus:outline-none focus:border-accent-blue"
+              className="input-base font-mono text-sm"
               placeholder="0x411f2547..."
             />
             <p className="text-xs text-gray-500 mt-1">Pre-filled with the demo workspace</p>

@@ -93,7 +93,7 @@ export default function LPPage() {
           <TrendingUp className="w-6 h-6 text-accent-green" />
           LP Dashboard
         </h1>
-        <p className="text-gray-400 mt-1">
+        <p className="text-gray-300 mt-1">
           Join a workspace as LP, check user compliance, and access trade audit
           trails
         </p>
@@ -130,7 +130,7 @@ export default function LPPage() {
                 type="text"
                 value={lookupAddress}
                 onChange={(e) => setLookupAddress(e.target.value)}
-                className="flex-1 bg-surface-700 border border-surface-600 rounded-lg px-4 py-3 text-white font-mono text-sm focus:outline-none focus:border-accent-blue"
+                className="input-base flex-1 font-mono text-sm"
                 placeholder="0x... wallet address"
               />
               <button onClick={handleLookupUser} className="btn-primary">
@@ -172,7 +172,7 @@ export default function LPPage() {
                 type="text"
                 value={tradeId}
                 onChange={(e) => setTradeId(e.target.value)}
-                className="flex-1 bg-surface-700 border border-surface-600 rounded-lg px-4 py-3 text-white font-mono text-sm focus:outline-none focus:border-accent-blue"
+                className="input-base flex-1 font-mono text-sm"
                 placeholder="0x... trade ID"
               />
               <button onClick={handleLookupTrade} className="btn-primary">
@@ -308,7 +308,7 @@ export default function LPPage() {
               type="text"
               value={workspaceId}
               onChange={(e) => setWorkspaceId(e.target.value)}
-              className="w-full bg-surface-700 border border-surface-600 rounded-lg px-4 py-3 text-white font-mono text-sm focus:outline-none focus:border-accent-blue"
+              className="input-base font-mono text-sm"
               placeholder="0x411f2547..."
             />
           </div>

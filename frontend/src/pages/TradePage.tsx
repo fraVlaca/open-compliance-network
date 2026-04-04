@@ -164,11 +164,9 @@ export default function TradePage() {
 
   return (
     <div className="space-y-8">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold">Trade</h1>
-          <p className="text-gray-400 mt-1">USDC escrow swap with compliance gating on Arc</p>
-        </div>
+      <div>
+        <h1 className="text-2xl font-bold">Trade</h1>
+        <p className="text-gray-300 mt-1">USDC escrow swap with compliance gating on Arc</p>
       </div>
 
       {/* Live metrics */}
@@ -188,7 +186,7 @@ export default function TradePage() {
             <div className="font-medium">
               {verifyLoading ? "Checking..." : isVerified ? "Identity Verified" : "Not Verified"}
             </div>
-            <div className="text-sm text-gray-400">
+            <div className="text-sm text-gray-300">
               {isVerified
                 ? "Your wallet has a valid KYC credential. You can trade."
                 : "Complete KYC verification on the Integrator page first."}
@@ -226,12 +224,12 @@ export default function TradePage() {
             <div>
               <label className="text-sm text-gray-400 block mb-1">Amount (USDC)</label>
               <input type="number" value={amount} onChange={(e) => setAmount(e.target.value)}
-                className="w-full bg-surface-700 border border-surface-600 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-accent-blue" placeholder="100" />
+                className="input-base" placeholder="100" />
             </div>
             <div>
               <label className="text-sm text-gray-400 block mb-1">Counterparty (0x0 = open)</label>
               <input type="text" value={counterparty} onChange={(e) => setCounterparty(e.target.value)}
-                className="w-full bg-surface-700 border border-surface-600 rounded-lg px-4 py-2.5 text-white font-mono text-xs focus:outline-none focus:border-accent-blue" placeholder="0x000...000" />
+                className="input-base font-mono text-xs" placeholder="0x000...000" />
             </div>
           </div>
 
@@ -261,7 +259,7 @@ export default function TradePage() {
           <div>
             <label className="text-sm text-gray-400 block mb-1">Order ID</label>
             <input type="text" value={fillOrderId} onChange={(e) => setFillOrderId(e.target.value)}
-              className="w-full bg-surface-700 border border-surface-600 rounded-lg px-4 py-2.5 text-white font-mono text-xs focus:outline-none focus:border-accent-blue" placeholder="0x..." />
+              className="input-base font-mono text-xs" placeholder="0x..." />
           </div>
           <button onClick={handleFillOrder} disabled={!isVerified || filling || !fillOrderId} className="btn-primary text-sm flex items-center gap-1.5 disabled:opacity-50">
             {filling ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CheckCircle2 className="w-3.5 h-3.5" />}
@@ -288,37 +286,48 @@ export default function TradePage() {
           <span className="text-xs text-gray-500 font-normal">({orders.length})</span>
         </h2>
         {orders.length === 0 ? (
-          <p className="text-sm text-gray-500 py-4 text-center">No orders yet. Create one above.</p>
+          <div className="flex flex-col items-center justify-center py-10 text-center">
+            <div className="w-12 h-12 rounded-xl bg-surface-700/50 flex items-center justify-center mb-3">
+              <ArrowRightLeft className="w-6 h-6 text-gray-600" />
+            </div>
+            <p className="text-sm text-gray-400 font-medium">No orders yet</p>
+            <p className="text-xs text-gray-500 mt-1">Create your first escrow order above to get started</p>
+          </div>
         ) : (
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto rounded-lg border border-surface-700/50">
             <table className="w-full text-sm">
               <thead>
-                <tr className="text-gray-500 text-xs border-b border-surface-600">
-                  <th className="text-left py-2 font-medium">Order ID</th>
-                  <th className="text-left py-2 font-medium">Maker</th>
-                  <th className="text-right py-2 font-medium">Amount</th>
-                  <th className="text-center py-2 font-medium">Status</th>
-                  <th className="text-right py-2 font-medium">Link</th>
+                <tr className="text-gray-400 text-xs bg-surface-700/30">
+                  <th className="text-left py-3 px-4 font-medium">Order ID</th>
+                  <th className="text-left py-3 px-4 font-medium">Maker</th>
+                  <th className="text-right py-3 px-4 font-medium">Amount</th>
+                  <th className="text-center py-3 px-4 font-medium">Status</th>
+                  <th className="text-right py-3 px-4 font-medium">Action</th>
                 </tr>
               </thead>
-              <tbody>
-                {orders.slice(0, 10).map((o) => (
-                  <tr key={o.orderId} className="border-b border-surface-700/50 hover:bg-surface-700/30">
-                    <td className="py-2.5 font-mono text-xs text-gray-300">
+              <tbody className="divide-y divide-surface-700/30">
+                {orders.slice(0, 10).map((o, i) => (
+                  <tr
+                    key={o.orderId}
+                    className={`hover:bg-surface-700/20 transition-colors ${
+                      i % 2 === 0 ? "bg-transparent" : "bg-surface-800/30"
+                    }`}
+                  >
+                    <td className="py-3 px-4 font-mono text-xs text-gray-300">
                       {o.orderId.slice(0, 10)}...{o.orderId.slice(-6)}
                     </td>
-                    <td className="py-2.5 font-mono text-xs text-gray-400">
+                    <td className="py-3 px-4 font-mono text-xs text-gray-400">
                       {o.maker.slice(0, 8)}...{o.maker.slice(-4)}
                     </td>
-                    <td className="py-2.5 text-right">
+                    <td className="py-3 px-4 text-right">
                       {formatUnits(o.amountIn, 6)} USDC
                     </td>
-                    <td className="py-2.5 text-center">
+                    <td className="py-3 px-4 text-center">
                       <span className={STATUS_COLORS[o.filled ? "Filled" : "Open"]}>
                         {o.filled ? "Filled" : "Open"}
                       </span>
                     </td>
-                    <td className="py-2.5 text-right">
+                    <td className="py-3 px-4 text-right">
                       <button
                         onClick={() => setFillOrderId(o.orderId)}
                         className="text-xs text-accent-blue hover:underline"

@@ -53,7 +53,7 @@ export default function ProtocolPage() {
           <Building2 className="w-6 h-6 text-accent-blue" />
           Protocol Dashboard
         </h1>
-        <p className="text-gray-400 mt-1">
+        <p className="text-gray-300 mt-1">
           Manage compliance workspaces and view integration details
         </p>
       </div>
@@ -117,7 +117,7 @@ export default function ProtocolPage() {
                 type="text"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                className="flex-1 bg-surface-700 border border-surface-600 rounded-lg px-4 py-2.5 text-white text-sm focus:outline-none focus:border-accent-blue"
+                className="input-base flex-1 text-sm"
                 placeholder="my-defi-protocol"
               />
               <button
