@@ -92,7 +92,7 @@ export function buildComplianceReport(
         4: approved,
         5: approved ? 1 : 8,
         6: auditHash,
-        7: "", // ipfsCid — empty for simulation
+        7: "", // ipfsCid - empty for simulation
         8: timestamp,
       },
     ] as any

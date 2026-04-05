@@ -121,7 +121,7 @@ export function useKYCFlow(walletAddress: Address | undefined) {
           return;
         }
 
-        // Not verified yet — start polling on-chain
+        // Not verified yet - start polling on-chain
         setState((s) => ({ ...s, step: "polling" }));
 
         let attempts = 0;

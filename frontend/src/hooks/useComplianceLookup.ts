@@ -47,7 +47,7 @@ export function useComplianceLookup() {
       const statusData = await statusResp.json();
       setLookupResult(statusData);
 
-      // Phase 2: CRE Workflow C — full compliance audit
+      // Phase 2: CRE Workflow C - full compliance audit
       setLookupPhase("cre");
       const auditResp = await fetch(
         `${BACKEND_URL}/api/audit/${lookupAddress}?reason=compliance+lookup`
