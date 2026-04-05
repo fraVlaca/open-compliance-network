@@ -18,7 +18,7 @@ app.use("/*", cors({ origin: "*" }));
 app.get("/health", (c) => c.json({ status: "ok", service: "@ocn/node-sdk" }));
 
 // ---------------------------------------------------------------------------
-// POST /api/kyc/token — Generate Sumsub access token via CRE Workflow D
+// POST /api/kyc/token - Generate Sumsub access token via CRE Workflow D
 //
 // The backend triggers CRE which:
 // 1. Verifies the integrator on-chain (IntegratorRegistry)
@@ -53,7 +53,7 @@ app.post("/api/kyc/token", async (c) => {
 });
 
 // ---------------------------------------------------------------------------
-// POST /api/kyc/verify — Verify KYC + issue credential via CRE Workflow A
+// POST /api/kyc/verify - Verify KYC + issue credential via CRE Workflow A
 //
 // Called after the user completes the Sumsub iframe. The backend triggers CRE which:
 // 1. Pulls Sumsub applicant status (Confidential HTTP)
@@ -84,9 +84,9 @@ app.post("/api/kyc/verify", async (c) => {
 });
 
 // ---------------------------------------------------------------------------
-// GET /api/kyc/status/:wallet — Read on-chain verification status
+// GET /api/kyc/status/:wallet - Read on-chain verification status
 //
-// Pure viem read — no CRE needed. Reads isVerified() from
+// Pure viem read - no CRE needed. Reads isVerified() from
 // ComplianceCredentialConsumer on Arc Testnet.
 // ---------------------------------------------------------------------------
 app.get("/api/kyc/status/:wallet", async (c) => {
@@ -102,7 +102,7 @@ app.get("/api/kyc/status/:wallet", async (c) => {
 });
 
 // ---------------------------------------------------------------------------
-// GET /api/integrator/:wallet — Read integrator registration from chain
+// GET /api/integrator/:wallet - Read integrator registration from chain
 // ---------------------------------------------------------------------------
 app.get("/api/integrator/:wallet", async (c) => {
   const wallet = c.req.param("wallet") as Address;
@@ -116,7 +116,7 @@ app.get("/api/integrator/:wallet", async (c) => {
 });
 
 // ---------------------------------------------------------------------------
-// POST /api/compliance/check — Per-trade compliance via CRE Workflow B
+// POST /api/compliance/check - Per-trade compliance via CRE Workflow B
 //
 // After fillOrderAsync() emits ComplianceCheckRequested on-chain, the frontend
 // sends the tx hash here. The backend triggers CRE Workflow B simulation which:
@@ -148,14 +148,14 @@ app.post("/api/compliance/check", async (c) => {
 });
 
 // ---------------------------------------------------------------------------
-// GET /api/audit/:wallet — Fetch encrypted KYC data via CRE Workflow C
+// GET /api/audit/:wallet - Fetch encrypted KYC data via CRE Workflow C
 //
 // Triggers Workflow C which:
 // 1. Verifies the requester is a registered integrator
 // 2. Checks role-based scoping (Protocol > Broker > LP)
 // 3. Fetches PII from Sumsub via Confidential HTTP
 // 4. Encrypts response with AES-GCM (encryptOutput: true)
-// 5. Returns encrypted PII — caller decrypts with their AES key
+// 5. Returns encrypted PII - caller decrypts with their AES key
 // ---------------------------------------------------------------------------
 app.get("/api/audit/:wallet", async (c) => {
   const wallet = c.req.param("wallet");

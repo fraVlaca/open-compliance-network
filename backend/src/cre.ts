@@ -2,7 +2,7 @@ import { execSync } from "child_process";
 import { CRE_CLI_PATH, PROJECT_ROOT, CRE_ENV, WORKFLOWS } from "./config";
 
 // ---------------------------------------------------------------------------
-// CRE Workflow Trigger — Simulation Mode
+// CRE Workflow Trigger - Simulation Mode
 //
 // In demo/hackathon mode, we shell out to `cre workflow simulate` which
 // compiles the workflow to WASM and runs it locally. The workflow makes
@@ -13,7 +13,7 @@ import { CRE_CLI_PATH, PROJECT_ROOT, CRE_ENV, WORKFLOWS } from "./config";
 // a CLI command. See the production comments at the bottom of this file.
 // ---------------------------------------------------------------------------
 
-const CRE_TIMEOUT = 120_000; // 2 minutes — compilation can be slow first run
+const CRE_TIMEOUT = 120_000; // 2 minutes - compilation can be slow first run
 
 /**
  * Run a CRE workflow simulation and parse the JSON result.
@@ -72,7 +72,7 @@ async function triggerWorkflow(
 }
 
 // ---------------------------------------------------------------------------
-// Public API — one function per workflow
+// Public API - one function per workflow
 // ---------------------------------------------------------------------------
 
 /**

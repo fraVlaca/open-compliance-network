@@ -40,7 +40,7 @@ const publicClient = createPublicClient({
 // Wallet client for on-chain writes (credential issuance)
 // In simulation mode, CRE's writeReport() doesn't land on the real chain,
 // so the backend writes the credential directly using the deployer key.
-// In production, CRE DON handles writes — this fallback is removed.
+// In production, CRE DON handles writes - this fallback is removed.
 const deployerKey = process.env.CRE_ETH_PRIVATE_KEY as Hex | undefined;
 const walletClient = deployerKey
   ? createWalletClient({
@@ -81,12 +81,12 @@ export async function getIntegrator(wallet: Address) {
  * This fallback writes the credential using the deployer key (which IS
  * set as the keystoneForwarder on the consumer contract).
  *
- * In production with CRE DON: this function is not needed — CRE writes via
+ * In production with CRE DON: this function is not needed - CRE writes via
  * the real KeystoneForwarder with DON threshold signatures.
  */
 export async function issueCredential(wallet: Address): Promise<Hex | null> {
   if (!walletClient) {
-    console.log("[chain] No deployer key — skipping credential write");
+    console.log("[chain] No deployer key - skipping credential write");
     return null;
   }
 
@@ -131,7 +131,7 @@ export async function issueCredential(wallet: Address): Promise<Hex | null> {
 
 /**
  * Write a per-trade compliance report on-chain.
- * Same fallback as issueCredential — CRE simulation can't write,
+ * Same fallback as issueCredential - CRE simulation can't write,
  * so the backend writes directly.
  */
 export async function issueTradeReport(

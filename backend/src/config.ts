@@ -25,7 +25,7 @@ export const WORKFLOWS = {
 } as const;
 
 // ---------------------------------------------------------------------------
-// Secrets — passed as env vars to cre workflow simulate
+// Secrets - passed as env vars to cre workflow simulate
 // These are the SAME values as in the project root .env
 // ---------------------------------------------------------------------------
 export const CRE_ENV = {
@@ -33,11 +33,13 @@ export const CRE_ENV = {
   SUMSUB_SECRET_KEY_ALL: process.env.SUMSUB_SECRET_KEY_ALL || "",
   CHAINALYSIS_API_KEY_ALL: process.env.CHAINALYSIS_API_KEY_ALL || "",
   AES_ENCRYPTION_KEY_ALL: process.env.AES_ENCRYPTION_KEY_ALL || "",
+  PINATA_API_KEY_ALL: process.env.PINATA_API_KEY_ALL || "",
+  PINATA_SECRET_KEY_ALL: process.env.PINATA_SECRET_KEY_ALL || "",
   CRE_ETH_PRIVATE_KEY: process.env.CRE_ETH_PRIVATE_KEY || "",
 };
 
 // ---------------------------------------------------------------------------
-// On-chain — Arc Testnet (Chain ID 5042002)
+// On-chain - Arc Testnet (Chain ID 5042002)
 // ---------------------------------------------------------------------------
 export const RPC_URL = "https://rpc.testnet.arc.network";
 export const CHAIN_ID = 5042002;
