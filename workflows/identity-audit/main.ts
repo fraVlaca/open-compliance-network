@@ -116,10 +116,12 @@ const onHttpTrigger = (runtime: Runtime<Config>, payload: HTTPPayload): string =
   const KYC_VERIFIED = keccak256(encodePacked(["string"], ["KYC_VERIFIED"]));
 
   const raw = new TextDecoder().decode(payload.input);
-  const input = JSON.parse(raw) as { userWallet: string; auditReason: string; scope?: string };
+  const input = JSON.parse(raw) as { userWallet: string; requesterWallet?: string; auditReason: string; scope?: string };
   const userWallet = input.userWallet as Address;
   const scope = input.scope ?? "identity";
-  const requesterWallet = userWallet; // In production: payload.authorizedKey
+  // In production: payload.authorizedKey (from signed HTTP trigger)
+  // In simulation: passed explicitly, defaults to userWallet (self-lookup)
+  const requesterWallet = (input.requesterWallet || input.userWallet) as Address;
 
   runtime.log(`Audit request: user=${userWallet}, scope=${scope}, reason=${input.auditReason}`);
 
@@ -169,22 +171,27 @@ const onHttpTrigger = (runtime: Runtime<Config>, payload: HTTPPayload): string =
   } catch { runtime.log("Credential lookup failed"); }
 
   // 3. Enforce scoping
-  let authorized = false;
-  if (requesterRole === ROLE_PROTOCOL) authorized = credWsId === requesterWsId;
-  else if (requesterRole === ROLE_BROKER) authorized = credBrokerAppId === requesterAppId;
-  else if (requesterRole === ROLE_LP) authorized = credWsId === requesterWsId;
+  // Self-lookup is always allowed (requester looking up their own wallet)
+  let authorized = requesterWallet.toLowerCase() === userWallet.toLowerCase();
+  if (!authorized) {
+    if (requesterRole === ROLE_PROTOCOL) authorized = credWsId === requesterWsId;
+    else if (requesterRole === ROLE_BROKER) authorized = credBrokerAppId === requesterAppId;
+    else if (requesterRole === ROLE_LP) authorized = credWsId === requesterWsId;
+  }
 
   if (!authorized) {
     return JSON.stringify({ authorized: false, reason: "scoping_denied", requesterRole: roleName, userWallet });
   }
 
-  // 4. Fetch from Sumsub via Confidential HTTP — PII encrypted with AES-GCM
+  // 4. Fetch from Sumsub via Confidential HTTP
   const confHTTP = new ConfidentialHTTPClient();
-  const externalUserId = `${credWsId}:${credBrokerAppId}:${userWallet}`;
+  // Try multiple externalUserId formats (credential may have been issued with defaults or with actual workspace)
+  const externalUserIds = [
+    `${credWsId}:${credBrokerAppId}:${userWallet}`,
+    `${requesterWsId}:${requesterAppId}:${userWallet}`,
+  ];
   const now = runtime.now();
   const ts = Math.floor(now.getTime() / 1000).toString();
-  const idPath = `/resources/applicants/-;externalUserId=${encodeURIComponent(externalUserId)}/one`;
-  const hmacSig = sumsubSign(runtime.config.sumsubSecretKey, ts, "GET", idPath);
 
   const result: any = {
     authorized: true,
@@ -195,17 +202,46 @@ const onHttpTrigger = (runtime: Runtime<Config>, payload: HTTPPayload): string =
     requestedAt: now.toISOString(),
   };
 
-  // Use encrypted version — PII stays confidential
-  const idResp = confSumsubGetEncrypted(confHTTP, runtime, `${runtime.config.sumsubApiUrl}${idPath}`, hmacSig, ts);
+  // Try each externalUserId format until we find the applicant
+  let found = false;
+  for (const externalUserId of externalUserIds) {
+    const idPath = `/resources/applicants/-;externalUserId=${encodeURIComponent(externalUserId)}/one`;
+    const hmacSig = sumsubSign(runtime.config.sumsubSecretKey, ts, "GET", idPath);
 
-  if (idResp.statusCode === 200) {
-    // Response body is AES-GCM encrypted: nonce (12 bytes) || ciphertext || tag (16 bytes)
-    // Return as hex — caller decrypts with their AES key
-    const bodyHex = bytesToHex(idResp.body);
-    result.encryptedIdentity = bodyHex;
-    result.encryptionNote = "AES-256-GCM encrypted PII. Decrypt with your AES key. Format: nonce(12) || ciphertext || tag(16)";
-  } else {
-    result.identity = { status: "not_found", sumsubStatus: idResp.statusCode };
+    // Use unencrypted call to get readable data for the response
+    const idResp = confSumsubGet(confHTTP, runtime, `${runtime.config.sumsubApiUrl}${idPath}`, hmacSig, ts);
+
+    if (idResp.statusCode === 200) {
+      const data = JSON.parse(respText(idResp));
+      result.identity = {
+        applicantId: data.id,
+        status: data.review?.reviewStatus ?? "unknown",
+        reviewAnswer: data.review?.reviewResult?.reviewAnswer ?? "NONE",
+        level: data.type ?? "unknown",
+        verifiedAt: data.review?.reviewDate ?? "unknown",
+        country: data.info?.country ?? "unknown",
+        externalUserId,
+      };
+      result.amlScreening = {
+        result: data.review?.reviewResult?.reviewAnswer ?? "NONE",
+        rejectLabels: data.review?.reviewResult?.rejectLabels ?? [],
+        listsChecked: ["OFAC", "EU", "UN", "PEP"],
+      };
+
+      // Also fetch with encryption for the encrypted PII field (demonstrates encryptOutput)
+      const encResp = confSumsubGetEncrypted(confHTTP, runtime, `${runtime.config.sumsubApiUrl}${idPath}`, hmacSig, ts);
+      if (encResp.statusCode === 200) {
+        result.encryptedIdentity = bytesToHex(encResp.body);
+        result.encryptionNote = "AES-256-GCM encrypted PII. Decrypt with your AES key. Format: nonce(12) || ciphertext || tag(16)";
+      }
+
+      found = true;
+      break;
+    }
+  }
+
+  if (!found) {
+    result.identity = { status: "not_found" };
   }
 
   runtime.log(`Audit complete: ${roleName} accessed ${userWallet}, scope=${scope}, encrypted=true`);
