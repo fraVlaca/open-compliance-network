@@ -16,6 +16,7 @@ import {
 import LandingPage from "./pages/LandingPage";
 import TradePage from "./pages/TradePage";
 import ProtocolPage from "./pages/ProtocolPage";
+import ProtocolDetailPage from "./pages/ProtocolDetailPage";
 import IntegratorPage from "./pages/IntegratorPage";
 import LPPage from "./pages/LPPage";
 
@@ -149,6 +150,7 @@ function AppLayout() {
           <Routes>
             <Route index element={<TradePage />} />
             <Route path="protocol" element={<ProtocolPage />} />
+            <Route path="protocol/:workspaceId" element={<ProtocolDetailPage />} />
             <Route path="integrator" element={<IntegratorPage />} />
             <Route path="lp" element={<LPPage />} />
           </Routes>

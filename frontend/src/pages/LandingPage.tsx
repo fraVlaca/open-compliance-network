@@ -1,12 +1,12 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import {
   Shield,
   ArrowRight,
+  ArrowRightLeft,
   Lock,
   FileCheck,
   Code2,
-  Zap,
   Globe,
   ExternalLink,
   CheckCircle2,
@@ -17,14 +17,14 @@ import {
   Cpu,
   Eye,
   Network,
-  Layers,
   ShieldCheck,
   ShieldX,
-  ArrowRightLeft,
   TrendingUp,
-  Scale,
   BadgeCheck,
   ArrowDown,
+  BarChart3,
+  Target,
+  MapPin,
 } from "lucide-react";
 import { CONTRACTS } from "../config/contracts";
 import AnimateOnScroll from "../components/ui/AnimateOnScroll";
@@ -65,9 +65,9 @@ export default function LandingPage() {
           </div>
           <div className="flex items-center gap-5">
             {[
-              { href: "#why", id: "why", label: "Why" },
-              { href: "#solution", id: "solution", label: "How it Works" },
-              { href: "#architecture", id: "architecture", label: "Architecture" },
+              { href: "#transformation", id: "transformation", label: "Before & After" },
+              { href: "#problem", id: "problem", label: "The Problem" },
+              { href: "#how", id: "how", label: "How It Works" },
               { href: "#contracts", id: "contracts", label: "Contracts" },
             ].map(({ href, id, label }) => (
               <a key={id} href={href} className={`text-xs transition-colors hidden md:block ${activeSection === id ? "text-white" : "text-gray-500 hover:text-gray-300"}`}>{label}</a>
@@ -85,27 +85,25 @@ export default function LandingPage() {
         <div className="absolute inset-0">
           <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-accent-blue/[0.07] via-transparent to-transparent" />
           <div className="absolute top-1/4 right-1/4 w-[500px] h-[500px] rounded-full bg-accent-purple/[0.04] blur-[100px]" />
-          {/* Grid pattern */}
           <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: 'linear-gradient(rgba(255,255,255,.1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.1) 1px, transparent 1px)', backgroundSize: '60px 60px' }} />
         </div>
 
         <div className="relative max-w-5xl mx-auto px-6 text-center">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-surface-800/80 border border-surface-600/40 text-xs text-gray-400 mb-8">
             <div className="w-1.5 h-1.5 rounded-full bg-accent-green animate-pulse" />
-            Live on Arc Testnet · ETHGlobal Cannes 2026
+            Live on Arc Testnet · 7 contracts · 4 CRE workflows
           </div>
 
           <h1 className="text-[clamp(2.5rem,6vw,5rem)] font-bold leading-[1.05] tracking-[-0.03em]">
-            <span className="text-white">The compliance layer</span>
+            <span className="text-white">Every protocol on Arc.</span>
             <br />
             <span className="bg-gradient-to-r from-accent-blue via-accent-purple to-accent-cyan bg-clip-text text-transparent">
-              for institutional DeFi on Arc.
+              Compliance-ready from day one.
             </span>
           </h1>
 
           <p className="text-base md:text-lg text-gray-300 mt-6 max-w-2xl mx-auto leading-relaxed">
-            A shared compliance engine on Chainlink CRE that gives every protocol on Arc institutional-grade KYC, sanctions screening, and verifiable audit trails.
-            One line of Solidity. No compliance team. No regulatory liability.
+            OCL is shared compliance infrastructure for Arc's economy. Any protocol integrates KYC, sanctions screening, and verifiable audit trails with one line of Solidity — no compliance team, no PII liability, no regulatory risk.
           </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mt-8">
@@ -117,13 +115,13 @@ export default function LandingPage() {
             </a>
           </div>
 
-          {/* Stats strip */}
+          {/* Stats strip — outcome metrics */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-px mt-16 rounded-xl overflow-hidden bg-surface-700/30 border border-surface-600/30 max-w-2xl mx-auto">
             {[
-              { value: "1 line", label: "Integration" },
-              { value: "9", label: "Compliance checks" },
-              { value: "7", label: "Contracts deployed" },
-              { value: "3", label: "CRE Workflows" },
+              { value: "$4.4M", label: "Annual savings per ecosystem" },
+              { value: "9 checks", label: "Per trade, one execution" },
+              { value: "0 PII", label: "Held by protocols" },
+              { value: "21 nodes", label: "DON consensus" },
             ].map(({ value, label }) => (
               <div key={label} className="bg-surface-800/60 py-4 px-3 text-center">
                 <div className="stat-value text-xl">{value}</div>
@@ -132,104 +130,39 @@ export default function LandingPage() {
             ))}
           </div>
 
-          <a href="#problem" className="inline-flex items-center gap-1.5 mt-10 text-xs text-gray-500 hover:text-gray-300 transition-colors">
+          <a href="#transformation" className="inline-flex items-center gap-1.5 mt-10 text-xs text-gray-500 hover:text-gray-300 transition-colors">
             <ArrowDown className="w-3 h-3" /> Scroll to learn more
           </a>
         </div>
       </section>
 
-      {/* ── WHY ARC NEEDS THIS ── */}
-      <section id="why" className="py-20 border-t border-surface-700/30">
-        <div className="max-w-5xl mx-auto px-6">
-          <div className="grid md:grid-cols-[1fr_1.5fr] gap-12 items-start">
-            {/* Left: headline */}
-            <div className="md:sticky md:top-24">
-              <p className="section-label mb-3">Built for Arc</p>
-              <h2 className="text-3xl md:text-4xl font-bold tracking-tight leading-tight">
-                The missing piece for
-                <br />
-                <span className="text-accent-blue">Arc's institutional economy.</span>
-              </h2>
-              <p className="text-gray-300 mt-4 text-sm leading-relaxed">
-                Arc is Circle's Economic OS for global-scale finance — USDC-native gas, regulatory-first design, institutional-grade infrastructure. But institutional capital requires compliance. Today, every protocol must build it alone.
-              </p>
-              <div className="mt-6 p-4 rounded-xl bg-gradient-to-br from-accent-blue/10 to-accent-purple/5 border border-accent-blue/20">
-                <p className="text-sm text-gray-200 leading-relaxed font-medium">
-                  OCL turns Arc into the first chain where every protocol ships compliance-ready — a shared layer that any protocol consumes, like a price feed.
-                </p>
-              </div>
-            </div>
-
-            {/* Right: value cards */}
-            <AnimateOnScroll>
-              <div className="space-y-3">
-                {[
-                  {
-                    icon: Building2, color: "blue",
-                    title: "One engine for the entire Arc ecosystem",
-                    desc: "Instead of each protocol independently paying for Sumsub, Chainalysis, and compliance engineering, they share one verifiable compliance layer. KYC once, use everywhere on Arc. Credentials portable across protocols via ACE's Cross-Chain Identifiers.",
-                  },
-                  {
-                    icon: ShieldCheck, color: "green",
-                    title: "Institutional access without regulatory risk",
-                    desc: "Protocols read an on-chain attestation — they never hold PII, never run KYC infrastructure, never trigger CASP classification under MiCA. The protocol stays decentralized. Institutions get the compliance they require. Both sides win.",
-                  },
-                  {
-                    icon: Eye, color: "purple",
-                    title: "Verifiable, self-binding compliance",
-                    desc: "Built on Chainlink CRE with open-source workflow code, on-chain pinned workflow IDs, and DON consensus across 21 nodes. The operator physically cannot change rules silently or selectively approve trades. No centralized backend can make this claim.",
-                  },
-                  {
-                    icon: FileCheck, color: "amber",
-                    title: "Unified audit trail for every trade",
-                    desc: "One compliance record per trade — DON-signed, stored on IPFS, hash-verified on-chain. All parties (protocol, LP, broker, regulator) see the same data. MiCA-ready 5-year record retention built in.",
-                  },
-                ].map(({ icon: Icon, color, title, desc }) => (
-                  <div key={title} className="group p-4 rounded-xl bg-surface-800/50 border border-surface-600/30 hover:border-surface-500/40 transition-colors">
-                    <div className="flex items-start gap-3">
-                      <div className={`w-8 h-8 rounded-lg bg-accent-${color}/10 border border-accent-${color}/20 flex items-center justify-center flex-shrink-0 mt-0.5`}>
-                        <Icon className={`w-4 h-4 text-accent-${color}`} />
-                      </div>
-                      <div>
-                        <h3 className="font-semibold text-sm text-white mb-1">{title}</h3>
-                        <p className="text-xs text-gray-400 leading-relaxed">{desc}</p>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </AnimateOnScroll>
-          </div>
-        </div>
-      </section>
-
-      {/* ── SOLUTION ── */}
-      <section id="solution" className="py-20 bg-surface-900/50 border-y border-surface-700/30">
+      {/* ── BEFORE & AFTER (moved up — first thing after hero) ── */}
+      <section id="transformation" className="py-20 bg-surface-900/50 border-y border-surface-700/30">
         <div className="max-w-5xl mx-auto px-6">
           <div className="text-center mb-12">
             <p className="section-label mb-3">Before & After</p>
             <h2 className="text-3xl md:text-4xl font-bold tracking-tight">
-              What changes for{" "}
-              <span className="text-accent-green">every party</span>
+              One engine replaces{" "}
+              <span className="text-accent-green">four compliance stacks</span>
             </h2>
             <p className="text-gray-400 mt-3 max-w-lg mx-auto text-sm leading-relaxed">
-              OCL eliminates duplicated compliance infrastructure. Every counterparty — protocol, LP, broker — reads from one shared, verifiable compliance layer.
+              Today, every counterparty in an institutional trade independently runs the same KYC, sanctions, and wallet screening — paying for it 4 times, generating 4 conflicting audit trails. OCL collapses this into a single verifiable execution.
             </p>
           </div>
 
           <AnimateOnScroll>
-            <div className="grid md:grid-cols-2 gap-4 mb-10">
+            <div className="grid md:grid-cols-2 gap-4 mb-6">
               {/* Without */}
               <div className="rounded-xl bg-surface-800/60 border border-accent-red/15 p-5">
                 <div className="flex items-center gap-2 mb-4">
                   <ShieldX className="w-4 h-4 text-accent-red" />
                   <span className="font-semibold text-sm">Without OCL</span>
-                  <span className="ml-auto text-[9px] font-mono text-accent-red/80 bg-accent-red/10 px-1.5 py-0.5 rounded">CURRENT</span>
+                  <span className="ml-auto text-[9px] font-mono text-accent-red/80 bg-accent-red/10 px-1.5 py-0.5 rounded">TODAY ON ARC</span>
                 </div>
                 <ul className="space-y-2">
                   {[
                     "Each party runs own KYC + sanctions + wallet screening",
-                    "4x provider licenses ($1.3-4.4M/yr)",
+                    "4× provider licenses ($1.3–4.4M/yr)",
                     "Fragmented audit trails — regulator gets 4 partial views",
                     "LP can't verify protocol actually ran checks",
                     "Adding KYC → CASP classification under MiCA",
@@ -247,7 +180,7 @@ export default function LandingPage() {
                 <div className="flex items-center gap-2 mb-4">
                   <ShieldCheck className="w-4 h-4 text-accent-green" />
                   <span className="font-semibold text-sm">With OCL</span>
-                  <span className="ml-auto text-[9px] font-mono text-accent-green/80 bg-accent-green/10 px-1.5 py-0.5 rounded">NEW</span>
+                  <span className="ml-auto text-[9px] font-mono text-accent-green/80 bg-accent-green/10 px-1.5 py-0.5 rounded">WITH OCL</span>
                 </div>
                 <ul className="space-y-2">
                   {[
@@ -268,14 +201,23 @@ export default function LandingPage() {
             </div>
           </AnimateOnScroll>
 
+          {/* Savings callout */}
+          <div className="text-center mb-10">
+            <p className="text-sm font-medium text-gray-300">
+              Estimated ecosystem savings:{" "}
+              <span className="text-accent-green font-bold">$1.3–4.4M/yr</span>{" "}
+              per 4-party trading ecosystem
+            </p>
+          </div>
+
           {/* Who benefits */}
           <AnimateOnScroll>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-px rounded-xl overflow-hidden bg-surface-600/20">
               {[
-                { icon: Building2, title: "For Protocols", desc: "Serve institutions with 1 line of Solidity. No compliance team, no CASP risk, no PII liability.", color: "blue" },
-                { icon: TrendingUp, title: "For LPs", desc: "Verify counterparty compliance on-chain before filling. No Sumsub or Chainalysis account needed.", color: "green" },
-                { icon: Users, title: "For Brokers", desc: "Onboard users once, credential reused across all Arc protocols. Scoped audit data via on-chain appId.", color: "purple" },
-                { icon: FileCheck, title: "For Regulators", desc: "One complete, immutable compliance record per trade. All providers combined. 5-year retention.", color: "amber" },
+                { icon: Building2, title: "For Protocols", desc: "Serve institutional counterparties without CASP classification risk. 1 line of Solidity.", color: "blue" },
+                { icon: TrendingUp, title: "For LPs", desc: "Verify counterparty compliance on-chain. No Sumsub account. No Chainalysis license.", color: "green" },
+                { icon: Users, title: "For Brokers", desc: "Onboard users once, credential reused across all Arc protocols. Eliminate redundant onboarding cost.", color: "purple" },
+                { icon: FileCheck, title: "For Regulators", desc: "One complete, immutable compliance record per trade. MiCA Article 76 compliant record retention.", color: "amber" },
               ].map(({ icon: Icon, title, desc, color }) => (
                 <div key={title} className="bg-surface-800/80 p-4">
                   <Icon className={`w-4 h-4 text-accent-${color} mb-2`} />
@@ -288,14 +230,185 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ── ARCHITECTURE ── */}
-      <section id="architecture" className="py-20">
+      {/* ── THE PROBLEM ── */}
+      <section id="problem" className="py-20 border-t border-surface-700/30">
+        <div className="max-w-5xl mx-auto px-6">
+          <div className="grid md:grid-cols-[1fr_1.5fr] gap-12 items-start">
+            {/* Left: the regulatory dilemma story */}
+            <div className="md:sticky md:top-24">
+              <p className="section-label mb-3">The Dilemma</p>
+              <h2 className="text-3xl md:text-4xl font-bold tracking-tight leading-tight">
+                Protocols want institutional capital.
+                <br />
+                <span className="text-accent-blue">Adding KYC destroys what makes them valuable.</span>
+              </h2>
+              <p className="text-gray-300 mt-4 text-sm leading-relaxed">
+                Institutions need KYC to participate. But the moment a protocol adds KYC infrastructure — holding a Sumsub account, processing PII, making access decisions — it creates an identifiable operator entity.
+              </p>
+              <p className="text-gray-300 mt-2 text-sm leading-relaxed">
+                Under MiCA (mandatory July 2026), that entity becomes a <span className="text-white font-medium">CASP</span> — a Crypto-Asset Service Provider requiring full licensing. The protocol loses its "fully decentralized" exemption.
+              </p>
+
+              <div className="mt-6 p-4 rounded-xl bg-gradient-to-br from-accent-red/10 to-accent-amber/5 border border-accent-red/20">
+                <p className="text-sm text-gray-200 leading-relaxed font-medium">
+                  The result: 4 parties independently pay for the same compliance checks on the same trades. $1.3–4.4M/yr in duplicated provider licenses. 4 fragmented audit trails. Users KYC'd 4 times for one swap.
+                </p>
+              </div>
+            </div>
+
+            {/* Right: problem → solution cards */}
+            <AnimateOnScroll>
+              <div className="space-y-3">
+                {[
+                  {
+                    icon: Building2, color: "blue",
+                    title: "4× redundant compliance infrastructure",
+                    desc: "Every protocol, LP, broker, and custodian independently pays for Sumsub, Chainalysis, and Notabene. Same users. Same trades. Same checks — run and paid for 4 times. OCL runs them once for the entire ecosystem.",
+                  },
+                  {
+                    icon: ShieldCheck, color: "green",
+                    title: "Entity crystallization → CASP classification",
+                    desc: "The entity that runs KYC becomes the de facto operator in regulators' eyes — regardless of what the smart contracts say. Under MiCA, that entity needs licensing, compliance officers, capital reserves, annual audits. OCL keeps the protocol as a protocol.",
+                  },
+                  {
+                    icon: Eye, color: "purple",
+                    title: "No party can verify another's compliance",
+                    desc: "An LP asks: did the protocol actually screen this wallet? With centralized backends, the answer is 'trust us.' With OCL: open-source code, on-chain pinned workflow IDs, DON consensus across 21 nodes. Verify, don't trust.",
+                  },
+                  {
+                    icon: FileCheck, color: "amber",
+                    title: "Regulators get 4 partial audit trails",
+                    desc: "When a regulator audits a trade, they get 4 different records from 4 parties using 4 providers. None align perfectly. OCL produces one DON-signed audit record per trade — same hash, same IPFS record, same data for everyone.",
+                  },
+                  {
+                    icon: BarChart3, color: "cyan",
+                    title: "Protocols are blind to their own users",
+                    desc: "DeFi protocols today have wallet addresses and nothing else — no demographics, no geography, no risk profiles. They can't segment users, can't plan expansion, can't pitch to institutions. KYC through OCL turns anonymous wallets into understood markets.",
+                  },
+                ].map(({ icon: Icon, color, title, desc }) => (
+                  <div key={title} className="group p-4 rounded-xl bg-surface-800/50 border border-surface-600/30 hover:border-surface-500/40 transition-colors">
+                    <div className="flex items-start gap-3">
+                      <div className={`w-8 h-8 rounded-lg bg-accent-${color}/10 border border-accent-${color}/20 flex items-center justify-center flex-shrink-0 mt-0.5`}>
+                        <Icon className={`w-4 h-4 text-accent-${color}`} />
+                      </div>
+                      <div>
+                        <h3 className="font-semibold text-sm text-white mb-1">{title}</h3>
+                        <p className="text-xs text-gray-400 leading-relaxed">{desc}</p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </AnimateOnScroll>
+          </div>
+        </div>
+      </section>
+
+      {/* ── WHAT PROTOCOLS UNLOCK ── */}
+      <section className="py-20 bg-surface-900/50 border-y border-surface-700/30">
         <div className="max-w-5xl mx-auto px-6">
           <div className="text-center mb-12">
-            <p className="section-label mb-3">Architecture</p>
-            <h2 className="text-3xl md:text-4xl font-bold tracking-tight">Three CRE Workflows</h2>
+            <p className="section-label mb-3">Beyond Compliance</p>
+            <h2 className="text-3xl md:text-4xl font-bold tracking-tight">
+              Your users become your{" "}
+              <span className="text-accent-cyan">market intelligence</span>
+            </h2>
+            <p className="text-gray-400 mt-3 max-w-xl mx-auto text-sm leading-relaxed">
+              KYC isn't just a regulatory checkbox. When your anonymous wallet addresses become verified users, you unlock the business intelligence that traditional fintech runs on — without ever touching PII.
+            </p>
+          </div>
+
+          <AnimateOnScroll>
+            <div className="grid md:grid-cols-2 gap-4 mb-6">
+              {/* Left: the blind spot */}
+              <div className="rounded-xl bg-surface-800/60 border border-surface-600/30 p-5">
+                <div className="flex items-center gap-2 mb-4">
+                  <XCircle className="w-4 h-4 text-gray-500" />
+                  <span className="font-semibold text-sm text-gray-300">DeFi protocols today</span>
+                  <span className="ml-auto text-[9px] font-mono text-gray-500 bg-surface-700/80 px-1.5 py-0.5 rounded">BLIND</span>
+                </div>
+                <ul className="space-y-2">
+                  {[
+                    "Wallet addresses — nothing else",
+                    "No idea who users are or where they're from",
+                    "Can't distinguish institutional from retail",
+                    "Can't segment by risk, geography, or behavior",
+                    "Can't pitch to institutions: \"we don't know our users\"",
+                    "Zero data for expansion or product decisions",
+                  ].map((item) => (
+                    <li key={item} className="flex items-start gap-2 text-xs text-gray-400">
+                      <div className="w-1 h-1 rounded-full bg-gray-600 mt-1.5 flex-shrink-0" />
+                      {item}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              {/* Right: what OCL unlocks */}
+              <div className="rounded-xl bg-surface-800/60 border border-accent-cyan/15 p-5">
+                <div className="flex items-center gap-2 mb-4">
+                  <BarChart3 className="w-4 h-4 text-accent-cyan" />
+                  <span className="font-semibold text-sm">With OCL user intelligence</span>
+                  <span className="ml-auto text-[9px] font-mono text-accent-cyan/80 bg-accent-cyan/10 px-1.5 py-0.5 rounded">UNLOCKED</span>
+                </div>
+                <ul className="space-y-2">
+                  {[
+                    "Demographics: geography, user type, risk profiles",
+                    "Segment users by jurisdiction, risk tier, and category",
+                    "Identify institutional counterparties entering the protocol",
+                    "Track which markets drive volume — plan expansion with data",
+                    "Pitch to institutions: \"X verified counterparties across Y jurisdictions\"",
+                    "Generate compliance reports per region for regulators",
+                  ].map((item) => (
+                    <li key={item} className="flex items-start gap-2 text-xs text-gray-300">
+                      <CheckCircle2 className="w-3 h-3 text-accent-cyan/60 mt-0.5 flex-shrink-0" />
+                      {item}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          </AnimateOnScroll>
+
+          <AnimateOnScroll>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-px rounded-xl overflow-hidden bg-surface-600/20">
+              {[
+                { icon: MapPin, title: "Geographic Intelligence", desc: "Understand which jurisdictions drive volume. Plan geographic expansion with real user data.", color: "cyan" },
+                { icon: Target, title: "Risk Segmentation", desc: "Categorize users by compliance risk tier — geography, PEP status, wallet history, Chainalysis scores.", color: "amber" },
+                { icon: TrendingUp, title: "Institutional Pipeline", desc: "Identify institutional-grade counterparties. Track institutional adoption across your protocol.", color: "green" },
+                { icon: BarChart3, title: "Business Development", desc: "Data-driven product strategy. Expansion planning. Partnership intelligence. Regulatory reporting.", color: "blue" },
+              ].map(({ icon: Icon, title, desc, color }) => (
+                <div key={title} className="bg-surface-800/80 p-4">
+                  <Icon className={`w-4 h-4 text-accent-${color} mb-2`} />
+                  <div className="text-xs font-semibold text-white">{title}</div>
+                  <div className="text-[10px] text-gray-400 mt-0.5 leading-snug">{desc}</div>
+                </div>
+              ))}
+            </div>
+          </AnimateOnScroll>
+
+          {/* Privacy callout */}
+          <div className="text-center mt-6">
+            <p className="text-[11px] text-gray-500">
+              <Lock className="w-3 h-3 inline mr-1 -mt-0.5" />
+              Privacy-preserving: protocols receive structured risk scores and demographic segments via scoped audit workflows — never raw PII. Data stays in the TEE.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* ── HOW IT WORKS (Architecture + Trust merged) ── */}
+      <section id="how" className="py-20 bg-surface-900/50 border-y border-surface-700/30">
+        <div className="max-w-5xl mx-auto px-6">
+          <div className="text-center mb-12">
+            <p className="section-label mb-3">How It Works</p>
+            <h2 className="text-3xl md:text-4xl font-bold tracking-tight">
+              Trade submitted. 9 checks. ~8 seconds.
+              <br />
+              <span className="text-accent-blue">Three CRE Workflows, verified by 21 nodes.</span>
+            </h2>
             <p className="text-gray-400 mt-3 max-w-lg mx-auto text-sm leading-relaxed">
-              We orchestrate Sumsub, Chainalysis, and Notabene inside a Trusted Execution Environment on Chainlink CRE.
+              OCL orchestrates Sumsub, Chainalysis, and Notabene inside a Trusted Execution Environment on Chainlink CRE. One execution, one result, one audit record.
             </p>
           </div>
 
@@ -304,6 +417,7 @@ export default function LandingPage() {
               {[
                 {
                   step: "A", title: "Identity Verification",
+                  outcome: "Verify once, reuse across all Arc protocols",
                   trigger: "HTTP Trigger",
                   icon: Users, borderColor: "border-accent-green/20", iconColor: "text-accent-green", dotColor: "bg-accent-green",
                   items: ["Sumsub + Chainalysis in TEE", "DON consensus across 21 nodes", "Credential → ACE IdentityRegistry"],
@@ -311,6 +425,7 @@ export default function LandingPage() {
                 },
                 {
                   step: "B", title: "Per-Trade Compliance",
+                  outcome: "9 checks per trade, automatic callback to execute",
                   trigger: "EVM Log Trigger",
                   icon: Lock, borderColor: "border-accent-blue/20", iconColor: "text-accent-blue", dotColor: "bg-accent-blue",
                   items: ["9 checks: KYC, sanctions, PEP, wallet risk, jurisdiction, Travel Rule", "Audit record → IPFS (hash on-chain)", "Auto-callback executes the trade"],
@@ -318,16 +433,17 @@ export default function LandingPage() {
                 },
                 {
                   step: "C", title: "Audit Data Access",
+                  outcome: "Fetch any trade's compliance record, verify against on-chain hash",
                   trigger: "Confidential HTTP",
                   icon: Eye, borderColor: "border-accent-amber/20", iconColor: "text-accent-amber", dotColor: "bg-accent-amber",
                   items: ["IPFS fetch by CID, keccak256 verified", "KYC/AML data scoped by appId", "No backend, no database, no API keys"],
                   tags: ["IPFS", "hash-verified"],
                 },
-              ].map(({ step, title, trigger, icon: Icon, borderColor, iconColor, dotColor, items, tags }) => (
+              ].map(({ step, title, outcome, trigger, icon: Icon, borderColor, iconColor, dotColor, items, tags }) => (
                 <div key={step} className={`rounded-xl border ${borderColor} bg-surface-800/40 p-5 space-y-4`}>
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2.5">
-                      <div className={`w-8 h-8 rounded-lg bg-surface-700 flex items-center justify-center`}>
+                      <div className="w-8 h-8 rounded-lg bg-surface-700 flex items-center justify-center">
                         <Icon className={`w-4 h-4 ${iconColor}`} />
                       </div>
                       <div>
@@ -337,6 +453,7 @@ export default function LandingPage() {
                     </div>
                     <span className={`w-6 h-6 rounded-md bg-surface-700 flex items-center justify-center text-[10px] font-bold font-mono ${iconColor}`}>{step}</span>
                   </div>
+                  <p className="text-[11px] text-accent-blue/80 font-medium">{outcome}</p>
                   <ul className="space-y-1.5">
                     {items.map((item) => (
                       <li key={item} className="flex items-start gap-2 text-xs text-gray-300">
@@ -354,34 +471,20 @@ export default function LandingPage() {
               ))}
             </div>
           </AnimateOnScroll>
-        </div>
-      </section>
 
-      {/* ── TRUST ── */}
-      <section className="py-20 bg-surface-900/50 border-y border-surface-700/30">
-        <div className="max-w-5xl mx-auto px-6">
-          <div className="text-center mb-12">
-            <p className="section-label mb-3">Why Trustless Matters</p>
-            <h2 className="text-3xl md:text-4xl font-bold tracking-tight">We can't cheat. By design.</h2>
-            <p className="text-gray-400 mt-3 text-sm max-w-lg mx-auto leading-relaxed">
-              Open-source compliance rules. On-chain pinned workflow IDs. DON consensus across 21 independent nodes. The operator structurally cannot change rules silently or selectively approve trades. No centralized compliance provider can make this claim.
-            </p>
-          </div>
-
+          {/* Trust properties — compact sub-grid */}
           <AnimateOnScroll>
-            <div className="grid md:grid-cols-3 gap-3">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-8">
               {[
-                { icon: Code2, title: "Open-Source Rules", desc: "WorkflowId = hash of binary. Pinned on-chain. Anyone can verify.", color: "blue" },
-                { icon: Lock, title: "Credentials in TEE", desc: "API keys in Vault DON. Threshold-encrypted. Nobody has the keys.", color: "purple" },
-                { icon: BadgeCheck, title: "Self-Binding", desc: "Can't change rules silently. Can't selectively approve trades. All on-chain.", color: "green" },
-                { icon: Eye, title: "Verifiable Execution", desc: "Code → binary → workflowId → DON consensus → signed report. Auditable.", color: "amber" },
-                { icon: FileCheck, title: "Unified Audit Trail", desc: "On-chain hash + IPFS per trade. keccak256 integrity. Same record for all.", color: "cyan" },
-                { icon: Zap, title: "Auto-Callback", desc: "swap() once → 9 checks → DON consensus → auto-execute. Single-TX UX.", color: "red" },
-              ].map(({ icon: Icon, title, desc, color }) => (
-                <div key={title} className="p-4 rounded-xl bg-surface-800/40 border border-surface-600/20 hover:border-surface-500/30 transition-colors">
-                  <Icon className={`w-4 h-4 text-accent-${color} mb-2.5`} />
-                  <h3 className="font-semibold text-xs text-white mb-1">{title}</h3>
-                  <p className="text-[11px] text-gray-400 leading-relaxed">{desc}</p>
+                { icon: Code2, title: "Any party can audit the rules", desc: "WorkflowId = hash of binary. Pinned on-chain. Anyone compiles the code and verifies." },
+                { icon: BadgeCheck, title: "No operator can alter outcomes", desc: "Structural self-binding. Can't change rules silently or selectively approve trades." },
+                { icon: FileCheck, title: "One record, one hash, one truth", desc: "DON-signed audit record on IPFS. keccak256 on-chain. Same data for all parties." },
+                { icon: Lock, title: "Credentials never leave the enclave", desc: "API keys threshold-encrypted in Vault DON. Decrypted only inside the TEE." },
+              ].map(({ icon: Icon, title, desc }) => (
+                <div key={title} className="p-3.5 rounded-xl bg-surface-800/30 border border-surface-600/20">
+                  <Icon className="w-3.5 h-3.5 text-gray-400 mb-2" />
+                  <h3 className="font-semibold text-[11px] text-white mb-1">{title}</h3>
+                  <p className="text-[10px] text-gray-500 leading-relaxed">{desc}</p>
                 </div>
               ))}
             </div>
@@ -394,7 +497,7 @@ export default function LandingPage() {
         <div className="max-w-5xl mx-auto px-6">
           <div className="text-center mb-12">
             <p className="section-label mb-3">Integration</p>
-            <h2 className="text-3xl md:text-4xl font-bold tracking-tight">One line of Solidity</h2>
+            <h2 className="text-3xl md:text-4xl font-bold tracking-tight">One line of Solidity. Zero compliance infrastructure.</h2>
           </div>
 
           <AnimateOnScroll>
@@ -444,12 +547,13 @@ export default function LandingPage() {
                 <h2 className="text-xl font-bold mb-4">Tech Stack</h2>
                 <div className="grid grid-cols-2 gap-2">
                   {[
-                    { name: "Chainlink CRE", desc: "3 workflows in TEE", icon: Cpu },
+                    { name: "Chainlink CRE", desc: "4 workflows in TEE", icon: Cpu },
                     { name: "Chainlink ACE", desc: "PolicyEngine + registries", icon: Shield },
                     { name: "Arc (Circle)", desc: "USDC-native L1", icon: Globe },
                     { name: "IPFS / Pinata", desc: "Audit storage", icon: Database },
                     { name: "Sumsub", desc: "KYC + sanctions", icon: Users },
                     { name: "Chainalysis", desc: "Wallet risk", icon: Network },
+                    { name: "Notabene", desc: "Travel Rule messaging", icon: ArrowRightLeft },
                   ].map(({ name, desc, icon: Icon }) => (
                     <div key={name} className="flex items-center gap-2.5 p-2.5 rounded-lg bg-surface-800/40 border border-surface-600/20">
                       <Icon className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" />
@@ -471,12 +575,12 @@ export default function LandingPage() {
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom,_var(--tw-gradient-stops))] from-accent-blue/[0.05] via-transparent to-transparent" />
         <div className="max-w-3xl mx-auto px-6 text-center relative">
           <h2 className="text-3xl md:text-4xl font-bold tracking-tight">
-            Every protocol on Arc.
+            The first compliance-ready chain.
             <br />
-            <span className="text-gray-400">Compliance-ready from day one.</span>
+            <span className="text-gray-400">Built on Arc. Powered by Chainlink CRE.</span>
           </h2>
           <p className="text-gray-400 mt-3 text-sm">
-            One line of Solidity. Zero compliance infrastructure. Verifiable by every counterparty.
+            One shared compliance layer for every protocol, every LP, every broker on Arc. Verify once. Trade everywhere. Audit anything.
           </p>
           <Link to="/app" className="inline-flex items-center gap-2 bg-white text-surface-900 font-semibold px-7 py-3 rounded-xl transition-all hover:shadow-xl hover:shadow-white/10 text-sm mt-8">
             Launch App <ArrowRight className="w-4 h-4" />

@@ -13,6 +13,7 @@ export const CONTRACTS = {
     "0xCC1Ca53a3e0fc709EEF9a4682dC1bC1db3C028b1" as Address,
   escrowSwap: "0x8f4e547A8AC08acbE6deeD40fDD8B665b76B3b6D" as Address,
   usdc: "0x3600000000000000000000000000000000000000" as Address,
+  eurc: "0x89B50855Aa3bE2F677cD6303Cec089B5F319D72a" as Address,
 } as const;
 
 // Demo workspace ID (created at deployment)

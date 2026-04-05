@@ -12,7 +12,13 @@ export function useIsVerified(wallet: Address | undefined) {
     abi: CREDENTIAL_CONSUMER_ABI,
     functionName: "isVerified",
     args: wallet ? [wallet] : undefined,
-    query: { enabled: !!wallet },
+    chainId: 5042002, // Force Arc Testnet
+    query: {
+      enabled: !!wallet,
+      refetchInterval: 10_000,
+      staleTime: 5_000,
+      gcTime: 0, // don't cache across page loads
+    },
   });
 }
 
