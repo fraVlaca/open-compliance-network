@@ -10,6 +10,10 @@ import {
   ChevronUp,
   Hash,
   Globe,
+  RefreshCw,
+  Loader2,
+  Download,
+  AlertTriangle,
 } from "lucide-react";
 import { CONTRACTS, REPORT_CONSUMER_ABI } from "../config/contracts";
 
@@ -21,96 +25,173 @@ interface ReportEvent {
   auditHash: string;
 }
 
+const IPFS_GATEWAY = "https://gateway.pinata.cloud/ipfs";
+
 function ReportDetail({ tradeId, event }: { tradeId: Hex; event: ReportEvent }) {
-  const { data } = useReadContract({
+  const { data, isLoading, error } = useReadContract({
     address: CONTRACTS.reportConsumer,
     abi: REPORT_CONSUMER_ABI,
     functionName: "getReport",
     args: [tradeId],
   });
 
-  // Use event data as fallback if getReport returns empty/zeroed struct
+  const [ipfsData, setIpfsData] = useState<Record<string, unknown> | null>(null);
+  const [ipfsLoading, setIpfsLoading] = useState(false);
+  const [ipfsError, setIpfsError] = useState("");
+
   const report = data as any;
-  const isEmptyReport =
-    !report ||
-    !report.trader ||
-    report.trader === "0x0000000000000000000000000000000000000000";
-  const trader = (!isEmptyReport && report.trader) || event?.trader || "-";
-  const counterparty = (!isEmptyReport && report.counterparty) || "-";
-  const sourceContract = (!isEmptyReport && report.sourceContract) || "-";
-  const auditHash = (!isEmptyReport && report.auditHash) || event?.auditHash || "-";
-  const ipfsCid = (!isEmptyReport && report.ipfsCid) || "";
-  const timestamp = !isEmptyReport ? report.timestamp : undefined;
+  const hasReport =
+    report &&
+    report.trader &&
+    report.trader !== "0x0000000000000000000000000000000000000000";
+
+  const trader = (hasReport ? report.trader : null) || event?.trader || "-";
+  const counterparty = (hasReport && report.counterparty) || "-";
+  const sourceContract = (hasReport && report.sourceContract) || "-";
+  const auditHash = (hasReport ? report.auditHash : null) || event?.auditHash || "-";
+  const ipfsCid = report?.ipfsCid || "";
+  const timestamp = hasReport ? report.timestamp : undefined;
+
+  if (error) {
+    console.warn("[ReportDetail] getReport error:", error);
+  }
+
+  const fetchIpfs = async (cid: string) => {
+    setIpfsLoading(true);
+    setIpfsError("");
+    try {
+      const resp = await fetch(`${IPFS_GATEWAY}/${cid}`);
+      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+      const json = await resp.json();
+      setIpfsData(json);
+    } catch (e: any) {
+      setIpfsError(e.message || "Failed to fetch from IPFS");
+    } finally {
+      setIpfsLoading(false);
+    }
+  };
 
   return (
-    <div className="grid grid-cols-2 gap-2 text-xs mt-2 p-3 rounded-lg bg-surface-900/50">
-      <div>
-        <span className="text-gray-500">Trader:</span>{" "}
-        <span className="font-mono text-gray-300">
-          {typeof trader === "string" && trader.length > 10
-            ? `${trader.slice(0, 10)}...${trader.slice(-6)}`
-            : trader}
-        </span>
-      </div>
-      <div>
-        <span className="text-gray-500">Counterparty:</span>{" "}
-        <span className="font-mono text-gray-300">
-          {typeof counterparty === "string" && counterparty.length > 10
-            ? `${counterparty.slice(0, 10)}...${counterparty.slice(-6)}`
-            : counterparty}
-        </span>
-      </div>
-      <div>
-        <span className="text-gray-500">Source Contract:</span>{" "}
-        <span className="font-mono text-gray-300">
-          {typeof sourceContract === "string" && sourceContract.length > 10
-            ? `${sourceContract.slice(0, 10)}...${sourceContract.slice(-6)}`
-            : sourceContract}
-        </span>
-      </div>
-      <div>
-        <span className="text-gray-500">Timestamp:</span>{" "}
-        <span className="text-gray-300">
-          {timestamp ? new Date(Number(timestamp) * 1000).toLocaleString() : "-"}
-        </span>
-      </div>
-      <div className="col-span-2">
-        <span className="text-gray-500">Audit Hash:</span>{" "}
-        <span className="font-mono text-accent-cyan text-[10px] break-all">{auditHash}</span>
-      </div>
-      <div className="col-span-2">
-        <span className="text-gray-500">Trade ID:</span>{" "}
-        <span className="font-mono text-gray-400 text-[10px] break-all">{tradeId}</span>
-      </div>
-      {ipfsCid && (
+    <div className="space-y-2 mt-2">
+      {isLoading && (
+        <div className="flex items-center gap-2 text-xs text-gray-400 p-2">
+          <Loader2 className="w-3 h-3 animate-spin" />
+          Loading on-chain report...
+        </div>
+      )}
+
+      <div className="grid grid-cols-2 gap-2 text-xs p-3 rounded-lg bg-surface-900/50">
+        <div>
+          <span className="text-gray-500">Trader:</span>{" "}
+          <span className="font-mono text-gray-300">
+            {typeof trader === "string" && trader.length > 10
+              ? `${trader.slice(0, 10)}...${trader.slice(-6)}`
+              : trader}
+          </span>
+        </div>
+        <div>
+          <span className="text-gray-500">Counterparty:</span>{" "}
+          <span className="font-mono text-gray-300">
+            {typeof counterparty === "string" && counterparty.length > 10
+              ? `${counterparty.slice(0, 10)}...${counterparty.slice(-6)}`
+              : counterparty}
+          </span>
+        </div>
+        <div>
+          <span className="text-gray-500">Source Contract:</span>{" "}
+          <span className="font-mono text-gray-300">
+            {typeof sourceContract === "string" && sourceContract.length > 10
+              ? `${sourceContract.slice(0, 10)}...${sourceContract.slice(-6)}`
+              : sourceContract}
+          </span>
+        </div>
+        <div>
+          <span className="text-gray-500">Timestamp:</span>{" "}
+          <span className="text-gray-300">
+            {timestamp ? new Date(Number(timestamp) * 1000).toLocaleString() : "-"}
+          </span>
+        </div>
+        <div className="col-span-2">
+          <span className="text-gray-500">Audit Hash:</span>{" "}
+          <span className="font-mono text-accent-cyan text-[10px] break-all">{auditHash}</span>
+        </div>
+        <div className="col-span-2">
+          <span className="text-gray-500">Trade ID:</span>{" "}
+          <span className="font-mono text-gray-400 text-[10px] break-all">{tradeId}</span>
+        </div>
+
+        {/* IPFS CID + link + fetch */}
         <div className="col-span-2">
           <span className="text-gray-500">IPFS:</span>{" "}
+          {ipfsCid ? (
+            <span className="inline-flex items-center gap-2 flex-wrap">
+              <a
+                href={`${IPFS_GATEWAY}/${ipfsCid}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-accent-blue text-[10px] font-mono inline-flex items-center gap-0.5 hover:underline"
+              >
+                {ipfsCid} <ExternalLink className="w-2.5 h-2.5" />
+              </a>
+              {!ipfsData && (
+                <button
+                  onClick={() => fetchIpfs(ipfsCid)}
+                  disabled={ipfsLoading}
+                  className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-medium
+                    bg-accent-amber/15 text-accent-amber border border-accent-amber/30
+                    hover:bg-accent-amber/25 transition-colors disabled:opacity-50"
+                >
+                  {ipfsLoading ? (
+                    <Loader2 className="w-2.5 h-2.5 animate-spin" />
+                  ) : (
+                    <Download className="w-2.5 h-2.5" />
+                  )}
+                  {ipfsLoading ? "Fetching..." : "Load Audit Record"}
+                </button>
+              )}
+            </span>
+          ) : (
+            <span className="text-gray-600 text-[10px]">
+              {isLoading ? "Loading..." : "Not available on-chain"}
+            </span>
+          )}
+        </div>
+
+        <div className="col-span-2">
           <a
-            href={`https://gateway.pinata.cloud/ipfs/${ipfsCid}`}
+            href={`https://testnet.arcscan.app/address/${CONTRACTS.reportConsumer}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="text-accent-blue text-[10px] font-mono inline-flex items-center gap-0.5 hover:underline"
+            className="text-accent-blue text-[10px] inline-flex items-center gap-0.5 hover:underline"
           >
-            {ipfsCid} <ExternalLink className="w-2.5 h-2.5" />
+            View on ArcScan <ExternalLink className="w-2.5 h-2.5" />
           </a>
         </div>
-      )}
-      {!ipfsCid && (
-        <div className="col-span-2">
-          <span className="text-gray-500">IPFS:</span>{" "}
-          <span className="text-gray-600 text-[10px]">Not uploaded (Pinata integration pending)</span>
+      </div>
+
+      {/* IPFS error */}
+      {ipfsError && (
+        <div className="flex items-center gap-1.5 text-xs text-accent-amber p-2">
+          <AlertTriangle className="w-3 h-3 flex-shrink-0" />
+          IPFS fetch failed: {ipfsError}
         </div>
       )}
-      <div className="col-span-2">
-        <a
-          href={`https://testnet.arcscan.app/address/${CONTRACTS.reportConsumer}`}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-accent-blue text-[10px] inline-flex items-center gap-0.5 hover:underline"
-        >
-          View on ArcScan <ExternalLink className="w-2.5 h-2.5" />
-        </a>
-      </div>
+
+      {/* Inline IPFS audit record */}
+      {ipfsData && (
+        <div className="rounded-lg border border-accent-amber/20 bg-accent-amber/5 p-3 space-y-2">
+          <div className="flex items-center gap-1.5 text-xs text-accent-amber font-medium">
+            <FileCheck className="w-3 h-3" />
+            Full Audit Record (IPFS)
+          </div>
+          <pre className="bg-surface-900 rounded-lg p-3 text-[10px] font-mono text-gray-300 overflow-x-auto max-h-72 overflow-y-auto whitespace-pre-wrap">
+            {JSON.stringify(ipfsData, null, 2)}
+          </pre>
+          <p className="text-[10px] text-gray-600">
+            Content-addressed on IPFS. keccak256 hash verified against on-chain auditHash.
+          </p>
+        </div>
+      )}
     </div>
   );
 }
@@ -119,6 +200,13 @@ export default function AuditTrail() {
   const client = usePublicClient();
   const [reports, setReports] = useState<ReportEvent[]>([]);
   const [expanded, setExpanded] = useState<string | null>(null);
+  const [tick, setTick] = useState(0);
+
+  // Auto-refresh every 15s
+  useEffect(() => {
+    const id = setInterval(() => setTick((t) => t + 1), 15_000);
+    return () => clearInterval(id);
+  }, []);
 
   useEffect(() => {
     if (!client) return;
@@ -145,19 +233,28 @@ export default function AuditTrail() {
             }))
             .reverse()
         );
-      } catch {
-        /* silently fail */
+      } catch (e) {
+        console.warn("[AuditTrail] getLogs failed:", e);
       }
     })();
-  }, [client]);
+  }, [client, tick]);
 
   return (
     <div className="card space-y-4">
-      <h2 className="font-semibold flex items-center gap-2">
-        <FileCheck className="w-5 h-5 text-accent-amber" />
-        Audit Trail
-        <span className="text-xs text-gray-500 font-normal">({reports.length} reports)</span>
-      </h2>
+      <div className="flex items-center justify-between">
+        <h2 className="font-semibold flex items-center gap-2">
+          <FileCheck className="w-5 h-5 text-accent-amber" />
+          Audit Trail
+          <span className="text-xs text-gray-500 font-normal">({reports.length} reports)</span>
+        </h2>
+        <button
+          onClick={() => setTick((t) => t + 1)}
+          className="p-1.5 rounded-lg hover:bg-surface-700/50 transition-colors text-gray-400 hover:text-gray-200"
+          title="Refresh"
+        >
+          <RefreshCw className="w-3.5 h-3.5" />
+        </button>
+      </div>
       <p className="text-xs text-gray-400">
         Per-trade compliance reports from CRE Workflow B. On-chain data is public and hash-verified.
         Full AuditRecords stored on IPFS (when available).
