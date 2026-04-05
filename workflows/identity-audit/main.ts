@@ -4,9 +4,9 @@
  * Trigger: HTTP (restricted to registered integrator wallets)
  * Flow: Verify requester role → check scoping → fetch Sumsub data (Confidential HTTP + encrypted) → return
  *
- * Privacy: Sumsub App Token in Vault DON via {{.sumsubAppToken}} — never leaves TEE enclave.
+ * Privacy: Sumsub App Token in Vault DON via {{.sumsubAppToken}} - never leaves TEE enclave.
  * PII response encrypted with AES-GCM (encryptOutput: true) before leaving enclave.
- * Integrator decrypts with shared AES key — PII never exposed outside TEE.
+ * Integrator decrypts with shared AES key - PII never exposed outside TEE.
  *
  * Qualifies for: Chainlink privacy standard track
  * - Confidential HTTP with Vault DON secrets
@@ -39,7 +39,7 @@ import { sha256 } from "@noble/hashes/sha256";
 import { z } from "zod";
 
 // ---------------------------------------------------------------------------
-// Config — sumsubAppToken in Vault DON secrets
+// Config - sumsubAppToken in Vault DON secrets
 // ---------------------------------------------------------------------------
 const configSchema = z.object({
   sumsubApiUrl: z.string(),
@@ -68,7 +68,7 @@ function sumsubSign(secretKey: string, ts: string, method: string, path: string)
 // Confidential HTTP helpers
 // ---------------------------------------------------------------------------
 function confSumsubGetEncrypted(client: ConfidentialHTTPClient, runtime: Runtime<Config>, url: string, hmacSig: string, ts: string) {
-  // Sort vaultDonSecrets alphabetically — Vault DON canonical ordering
+  // Sort vaultDonSecrets alphabetically - Vault DON canonical ordering
   return client.sendRequest(runtime, {
     vaultDonSecrets: [
       { key: "aesEncryptionKey", owner: runtime.config.owner },

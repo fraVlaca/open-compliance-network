@@ -4,11 +4,11 @@
  * Trigger: HTTP (integrator backend calls to get a Sumsub access token)
  * Flow: Verify integrator on-chain → Create applicant (Confidential HTTP) → Generate token → Return
  *
- * Privacy: Sumsub App Token in Vault DON via {{.sumsubAppToken}} — never leaves TEE enclave.
+ * Privacy: Sumsub App Token in Vault DON via {{.sumsubAppToken}} - never leaves TEE enclave.
  * The integrator backend NEVER sees the Sumsub API credentials.
  * Only CRE has the Sumsub App Token and Secret Key.
  *
- * This workflow does NOT write on-chain — it returns the access token via HTTP response.
+ * This workflow does NOT write on-chain - it returns the access token via HTTP response.
  *
  * Qualifies for: Chainlink privacy standard track
  * - Confidential HTTP for credential-secure API integration
@@ -40,7 +40,7 @@ import { sha256 } from "@noble/hashes/sha256";
 import { z } from "zod";
 
 // ---------------------------------------------------------------------------
-// Config — sumsubAppToken in Vault DON secrets, NOT config
+// Config - sumsubAppToken in Vault DON secrets, NOT config
 // ---------------------------------------------------------------------------
 const configSchema = z.object({
   sumsubApiUrl: z.string(),
@@ -105,7 +105,7 @@ const onHttpTrigger = (runtime: Runtime<Config>, payload: HTTPPayload): string =
   let wsId: Hex = keccak256(toHex("default"));
 
   {
-    // Always try the wallet itself first — matches what Workflow A does
+    // Always try the wallet itself first - matches what Workflow A does
     const network = getNetwork({ chainFamily: "evm", chainSelectorName: runtime.config.chainSelectorName, isTestnet: true });
     if (network) {
       const evmClient = new cre.capabilities.EVMClient(network.chainSelector.selector);
@@ -116,7 +116,7 @@ const onHttpTrigger = (runtime: Runtime<Config>, payload: HTTPPayload): string =
         }).result();
         const decoded = decodeFunctionResult({ abi: REGISTRY_ABI, functionName: "getIntegrator", data: bytesToHex(regResult.data) as Hex }) as [Hex, Hex, number, boolean];
         if (decoded[3]) { brokerAppId = decoded[0]; wsId = decoded[1]; }
-      } catch { runtime.log("Wallet IntegratorRegistry lookup failed — using defaults"); }
+      } catch { runtime.log("Wallet IntegratorRegistry lookup failed - using defaults"); }
     }
   }
 
@@ -147,7 +147,7 @@ const onHttpTrigger = (runtime: Runtime<Config>, payload: HTTPPayload): string =
     }
   }
 
-  // 2. Build externalUserId — must match Workflow A for applicant lookup
+  // 2. Build externalUserId - must match Workflow A for applicant lookup
   const externalUserId = `${wsId}:${brokerAppId}:${wallet}`;
   runtime.log(`externalUserId=${externalUserId.slice(0, 40)}...`);
 

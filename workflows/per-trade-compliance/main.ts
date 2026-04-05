@@ -40,7 +40,7 @@ import { sha256 } from "@noble/hashes/sha256";
 import { z } from "zod";
 
 // ---------------------------------------------------------------------------
-// Config — sumsubAppToken + chainalysisApiKey in Vault DON secrets
+// Config - sumsubAppToken + chainalysisApiKey in Vault DON secrets
 // ---------------------------------------------------------------------------
 const configSchema = z.object({
   sumsubApiUrl: z.string(),
@@ -113,6 +113,47 @@ function respText(resp: { body: Uint8Array }): string {
   return new TextDecoder().decode(resp.body);
 }
 
+/**
+ * Upload AuditRecord to IPFS via Pinata (Confidential HTTP — JWT in Vault DON).
+ * Returns the IPFS CID (IpfsHash) or empty string on failure.
+ */
+function uploadToIPFS(client: ConfidentialHTTPClient, runtime: Runtime<Config>, auditRecord: AuditRecord, tradeId: string): string {
+  try {
+    const body = JSON.stringify({
+      pinataContent: auditRecord,
+      pinataMetadata: { name: `compliance-report-${tradeId.slice(0, 16)}` },
+    });
+
+    const resp = client.sendRequest(runtime, {
+      vaultDonSecrets: [
+        { key: "pinataApiKey", owner: runtime.config.owner },
+        { key: "pinataSecretKey", owner: runtime.config.owner },
+      ],
+      request: {
+        url: "https://api.pinata.cloud/pinning/pinJSONToIPFS",
+        method: "POST",
+        multiHeaders: {
+          pinata_api_key: { values: ["{{.pinataApiKey}}"] },
+          pinata_secret_api_key: { values: ["{{.pinataSecretKey}}"] },
+          "Content-Type": { values: ["application/json"] },
+        },
+        bodyString: body,
+      },
+    }).result();
+
+    if (resp.statusCode === 200) {
+      const data = JSON.parse(respText(resp));
+      runtime.log(`IPFS upload: CID=${data.IpfsHash}`);
+      return data.IpfsHash || "";
+    }
+    runtime.log(`IPFS upload failed: ${resp.statusCode} ${respText(resp).slice(0, 100)}`);
+    return "";
+  } catch (e) {
+    runtime.log(`IPFS upload error: ${e}`);
+    return "";
+  }
+}
+
 // ---------------------------------------------------------------------------
 // Provider checks via Confidential HTTP
 // ---------------------------------------------------------------------------
@@ -165,7 +206,7 @@ function determineRegulation(j: string): string {
 }
 
 // ---------------------------------------------------------------------------
-// Handler — triggered by EVM Log event
+// Handler - triggered by EVM Log event
 // ---------------------------------------------------------------------------
 const onLogTrigger = (runtime: Runtime<Config>, log: any): string => {
   const REGISTRY_ABI = parseAbi(["function getIntegrator(address) view returns (bytes32, bytes32, uint8, bool)"]);
@@ -173,7 +214,7 @@ const onLogTrigger = (runtime: Runtime<Config>, log: any): string => {
   const CREDENTIAL_ABI = parseAbi(["function getCredential(bytes32, bytes32) view returns (uint40, bytes)"]);
   const KYC_VERIFIED = keccak256(encodePacked(["string"], ["KYC_VERIFIED"]));
 
-  // Log fields are Uint8Array — convert to hex with bytesToHex
+  // Log fields are Uint8Array - convert to hex with bytesToHex
   const tradeId = bytesToHex(log.topics[1]) as Hex;
   const traderTopic = bytesToHex(log.topics[2]) as Hex;
   const trader = getAddress("0x" + traderTopic.slice(26)) as Address;
@@ -200,9 +241,9 @@ const onLogTrigger = (runtime: Runtime<Config>, log: any): string => {
     }).result();
     const decoded = decodeFunctionResult({ abi: REGISTRY_ABI, functionName: "getIntegrator", data: bytesToHex(regResult.data) as Hex }) as [Hex, Hex, number, boolean];
     if (decoded[3]) { workspaceId = decoded[1]; }
-  } catch { runtime.log("IntegratorRegistry lookup failed — using defaults"); }
+  } catch { runtime.log("IntegratorRegistry lookup failed - using defaults"); }
 
-  // 2. Read trader's brokerAppId — first try IntegratorRegistry, then credential
+  // 2. Read trader's brokerAppId - first try IntegratorRegistry, then credential
   // Use the trader's own appId from IntegratorRegistry as the primary source
   // This matches what Workflow D used when creating the Sumsub applicant
   let brokerAppId: Hex = keccak256(toHex("self-onboard"));
@@ -230,7 +271,7 @@ const onLogTrigger = (runtime: Runtime<Config>, log: any): string => {
         workspaceId = decoded[4] as Hex;
       }
     }
-  } catch { runtime.log("Credential lookup failed — using default brokerAppId"); }
+  } catch { runtime.log("Credential lookup failed - using default brokerAppId"); }
 
   // 3-4. Provider checks via Confidential HTTP
   runtime.log(`Sumsub lookup: ws=${workspaceId.slice(0,16)}... broker=${brokerAppId.slice(0,16)}... trader=${trader}`);
@@ -252,11 +293,14 @@ const onLogTrigger = (runtime: Runtime<Config>, log: any): string => {
     jurisdictionCheck: { allowed: jurisdictionAllowed, jurisdiction: sumsubStatus.jurisdiction, regulation: determineRegulation(sumsubStatus.jurisdiction) },
     decision,
   };
-  const auditHash = keccak256(toHex(JSON.stringify(auditRecord)));
-  let ipfsCid = "";
+  const auditJson = JSON.stringify(auditRecord);
+  const auditHash = keccak256(toHex(auditJson));
+
+  // 8. Upload AuditRecord to IPFS via Pinata (Confidential HTTP — JWT in Vault DON)
+  const ipfsCid = uploadToIPFS(confHTTP, runtime, auditRecord, tradeId);
   const reportTs = BigInt(Math.floor(now.getTime() / 1000));
 
-  // 8. Write ComplianceReport on-chain — use flat params (not tuple)
+  // 8. Write ComplianceReport on-chain - use flat params (not tuple)
   const reportPayload = encodeAbiParameters(
     parseAbiParameters("bytes32, address, address, address, bool, uint8, bytes32, string, uint256"),
     [tradeId, trader, counterparty as Address, sourceContract, decision.approved, decision.riskScore, auditHash, ipfsCid, reportTs]
@@ -269,11 +313,11 @@ const onLogTrigger = (runtime: Runtime<Config>, log: any): string => {
   }).result();
 
   runtime.log(`Compliance report written for trade ${tradeId}`);
-  return JSON.stringify({ tradeId, approved: decision.approved, riskScore: decision.riskScore, auditHash });
+  return JSON.stringify({ tradeId, approved: decision.approved, riskScore: decision.riskScore, auditHash, ipfsCid });
 };
 
 // ---------------------------------------------------------------------------
-// Init + main — EVM Log Trigger
+// Init + main - EVM Log Trigger
 // ---------------------------------------------------------------------------
 function hexToBase64(hex: string): string {
   const h = hex.startsWith("0x") ? hex.slice(2) : hex;

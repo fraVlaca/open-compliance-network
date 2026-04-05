@@ -4,8 +4,8 @@
  * Trigger: HTTP (integrator backend calls after user completes Sumsub iframe)
  * Flow: IntegratorRegistry read → Sumsub verify (Confidential HTTP) → Chainalysis risk (Confidential HTTP) → writeReport
  *
- * Privacy: Sumsub App Token injected via {{.sumsubAppToken}} — stays in Vault DON / TEE enclave.
- * Chainalysis API key injected via {{.chainalysisApiKey}} — stays in Vault DON.
+ * Privacy: Sumsub App Token injected via {{.sumsubAppToken}} - stays in Vault DON / TEE enclave.
+ * Chainalysis API key injected via {{.chainalysisApiKey}} - stays in Vault DON.
  * HMAC-SHA256 computed in handler (needs secret key), passed as plain header value.
  *
  * Qualifies for: Chainlink privacy standard track (Confidential HTTP + Vault DON secrets)
@@ -40,8 +40,8 @@ import { sha256 } from "@noble/hashes/sha256";
 import { z } from "zod";
 
 // ---------------------------------------------------------------------------
-// Config — sumsubAppToken + chainalysisApiKey in Vault DON secrets, NOT config
-// sumsubSecretKey in config for HMAC computation (simulation).
+// Config - sumsubAppToken + chainalysisApiKey in Vault DON secrets, NOT config
+// sumsubSecretKey in config for HMAC computation.
 // Production: runtime.getSecret("sumsubSecretKey")
 // ---------------------------------------------------------------------------
 const configSchema = z.object({
@@ -57,7 +57,7 @@ const configSchema = z.object({
 type Config = z.infer<typeof configSchema>;
 
 // ---------------------------------------------------------------------------
-// HMAC-SHA256 signing (Noble hashes — works in QuickJS WASM)
+// HMAC-SHA256 signing (Noble hashes - works in QuickJS WASM)
 // ---------------------------------------------------------------------------
 function sumsubSign(secretKey: string, ts: string, method: string, path: string, body: string = ""): string {
   const sig = hmac(sha256, new TextEncoder().encode(secretKey), new TextEncoder().encode(ts + method + path + body));
@@ -65,7 +65,7 @@ function sumsubSign(secretKey: string, ts: string, method: string, path: string,
 }
 
 // ---------------------------------------------------------------------------
-// Confidential HTTP helpers — credentials stay in TEE enclave
+// Confidential HTTP helpers - credentials stay in TEE enclave
 // ---------------------------------------------------------------------------
 function confSumsubRequest(
   client: ConfidentialHTTPClient, runtime: Runtime<Config>,
@@ -139,7 +139,7 @@ const onHttpTrigger = (runtime: Runtime<Config>, payload: HTTPPayload): string =
   try {
     const decoded = decodeFunctionResult({ abi: REGISTRY_ABI, functionName: "getIntegrator", data: bytesToHex(regResult.data) as Hex }) as [Hex, Hex, number, boolean];
     if (decoded[3]) { brokerAppId = decoded[0]; wsId = decoded[1]; }
-  } catch { runtime.log("IntegratorRegistry lookup failed — using defaults"); }
+  } catch { runtime.log("IntegratorRegistry lookup failed - using defaults"); }
 
   const externalUserId = `${wsId}:${brokerAppId}:${wallet}`;
   runtime.log(`externalUserId=${externalUserId.slice(0, 50)}...`);
@@ -211,7 +211,7 @@ const onHttpTrigger = (runtime: Runtime<Config>, payload: HTTPPayload): string =
     gasConfig: { gasLimit: "500000" },
   }).result();
 
-  // Log the write result — check if tx actually submitted
+  // Log the write result - check if tx actually submitted
   const txHash = writeResult.txHash ? bytesToHex(writeResult.txHash) : "none";
   runtime.log(`writeReport result: txStatus=${writeResult.txStatus}, txHash=${txHash}, error=${writeResult.errorMessage || "none"}`);
   runtime.log(`Credential issued: wallet=${wallet}, risk=${riskScore}, jurisdiction=${jurisdiction}`);
