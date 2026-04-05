@@ -278,8 +278,8 @@ export default function AuditDrillDown() {
     { id: 'integrator-wfC', source: 'integrator', target: 'wfC', type: 'roundTripEdge',
       data: { requestState: edgeStates['integrator-wfC'] || 'idle', responseState: edgeStates['wfC-integrator-return'] || 'idle',
         requestLabel: 'signed HTTP', responseLabel: 'encrypted KYC data' } },
-    { id: 'wfC-registry', source: 'wfC', sourceHandle: 'bottom', target: 'registryCheck', targetHandle: 'top', type: 'dataFlowEdge', data: { state: edgeStates['wfC-registry'] || 'idle' } },
-    { id: 'wfC-credentialReg', source: 'wfC', sourceHandle: 'bottom', target: 'credentialCheck', targetHandle: 'top', type: 'dataFlowEdge', data: { state: edgeStates['wfC-credentialReg'] || 'idle' } },
+    { id: 'wfC-registry', source: 'wfC', sourceHandle: 'bottom', target: 'registryCheck', targetHandle: 'top', type: 'dataFlowEdge', data: { state: edgeStates['wfC-registry'] || 'idle', label: 'getIntegrator(wallet)' } },
+    { id: 'wfC-credentialReg', source: 'wfC', sourceHandle: 'bottom', target: 'credentialCheck', targetHandle: 'top', type: 'dataFlowEdge', data: { state: edgeStates['wfC-credentialReg'] || 'idle', label: 'getCredential(ccid)' } },
     // wfC ↔ Sumsub (RoundTripEdge — confidential request + KYC data response)
     { id: 'wfC-sumsub', source: 'wfC', target: 'sumsubFetch', type: 'roundTripEdge',
       data: { requestState: edgeStates['wfC-sumsub'] || 'idle', responseState: edgeStates['sumsub-wfC-return'] || 'idle',

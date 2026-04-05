@@ -19,7 +19,7 @@
       },
       "arcContainer": {
         "width": 249,
-        "height": 580
+        "height": 520
       }
     }
   },
@@ -42,8 +42,8 @@
         "height": 253
       },
       "arcLeft": {
-        "width": 215,
-        "height": 120
+        "width": 317,
+        "height": 154
       },
       "arcRight": {
         "width": 200,

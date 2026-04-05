@@ -42,10 +42,10 @@ const sidePanels: Record<string, SidePanelData> = {
   pattern3: {
     stage: 'Integration', beat: 'Pattern 3', title: 'Async + Auto-Callback',
     json: {
-      'Code': 'emit ComplianceCheckRequested(tradeId, ...)',
-      'Flow': 'swap() → emit event → CRE picks up → all checks in CRE → DON consensus → writeReport → onComplianceApproved(tradeId) → trade executes',
+      'Code': 'emit ComplianceCheckRequested(...) + onComplianceApproved(tradeId)  // 2 lines',
+      'Flow': 'swap() → emit event → CRE picks up → all checks in CRE → DON consensus → writeReport → callback → trade settles',
       'Best for': 'Deep per-trade checks: sanctions + counterparty risk + jurisdiction + structuring',
-      'User experience': 'ONE transaction. CRE auto-callbacks execute the trade.',
+      'User experience': 'ONE user tx. CRE auto-callbacks settle the trade via onComplianceApproved.',
       'Deployed': `EscrowSwap on Arc Testnet: ${DEMO.contracts.escrowSwap}`,
       'Demo contract': 'DemoSwapProtocol.sol — implements all 3 patterns',
       'Callback interface': 'IComplianceCallback — onComplianceApproved() / onComplianceRejected()',

@@ -11,16 +11,25 @@ import AutoFitView from '../components/AutoFitView'
 import type { StageSequence, FlowState, NodeState, EdgeState, SidePanelData } from '../types'
 
 const sidePanels: Record<string, SidePanelData> = {
-  submit: {
-    stage: 'Trade Flow', beat: 'Trade Submission', title: 'User Calls swap()',
+  create: {
+    stage: 'Trade Flow', beat: 'Order Creation', title: 'Trader Creates Escrow',
     json: {
-      'User action': 'swap(counterparty, USDC, 100000)',
-      'Single tx': 'User submits ONE transaction — no second tx needed',
-      'Contract': 'Stores pending trade + emits ComplianceCheckRequested event',
-      'Event': 'ComplianceCheckRequested(tradeId, trader, counterparty, asset, amount)',
+      'Prerequisite': 'Trader must be KYC verified — require(isVerified(msg.sender))',
+      'Trader action': 'createOrder(taker, tokenIn, tokenOut, amountIn, amountOut)',
+      'Contract': 'EscrowSwap escrows tokenIn from trader',
+      'Order status': 'Open — waiting for LP to fill',
+    },
+    highlightFields: ['Prerequisite', 'Trader action'],
+  },
+  fill: {
+    stage: 'Trade Flow', beat: 'Order Fill', title: 'LP Fills Order',
+    json: {
+      'LP action': 'fillOrderAsync(orderId) — deposits tokenOut into escrow',
+      'Both sides escrowed': 'EscrowSwap now holds tokenIn (trader) + tokenOut (LP)',
+      'Event emitted': 'ComplianceCheckRequested(tradeId, LP, trader, asset, amount)',
       'CRE detects': 'EVM Log Trigger picks up event within seconds',
     },
-    highlightFields: ['Single tx', 'Event'],
+    highlightFields: ['Both sides escrowed', 'Event emitted'],
   },
   checks: {
     stage: 'Trade Flow', beat: 'Compliance Checks', title: 'CRE Workflow B',
@@ -42,8 +51,9 @@ const sidePanels: Record<string, SidePanelData> = {
     json: {
       'ComplianceReport (on-chain)': { tradeId: '0xabc...', trader: '0xUser', counterparty: '0xLP', sourceContract: '0xSwap', approved: true, riskScore: 2, auditHash: '0x9f2e...', ipfsCid: 'QmXyz...' },
       'IPFS': 'Full AuditRecord uploaded via Pinata — content-addressed',
-      'Auto-callback': 'ComplianceReportConsumer.onReport() → onComplianceApproved(tradeId) or onComplianceRejected(tradeId, reason)',
-      'Result': 'One user tx → CRE checks → DON consensus → auto-callback → trade done',
+      'Auto-callback': 'ComplianceReportConsumer calls EscrowSwap.onComplianceApproved(tradeId) → escrow settles, tokens swap',
+      'If rejected': 'EscrowSwap.onComplianceRejected(tradeId) → refunds both maker and taker',
+      'Result': 'One fill tx → CRE checks → DON consensus → auto-callback → escrow settles',
     },
     highlightFields: ['Auto-callback', 'Result'],
   },
@@ -51,10 +61,16 @@ const sidePanels: Record<string, SidePanelData> = {
 
 function buildTradeSequence(): StageSequence {
   return [
-    { delay: 300, sidePanel: sidePanels.submit, apply: (s: FlowState) => ({ nodeStates: { ...s.nodeStates, user: 'active' as NodeState } }) },
-    { delay: 600, apply: (s: FlowState) => ({ nodeStates: { ...s.nodeStates, user: 'completed' as NodeState }, edgeStates: { ...s.edgeStates, 'user-swap': 'active' as EdgeState } }) },
-    { delay: 400, apply: (s: FlowState) => ({ edgeStates: { ...s.edgeStates, 'user-swap': 'completed' as EdgeState }, nodeStates: { ...s.nodeStates, swap: 'active' as NodeState } }) },
-    { delay: 800, apply: (s: FlowState) => ({ nodeStates: { ...s.nodeStates, swap: 'completed' as NodeState }, edgeStates: { ...s.edgeStates, 'swap-cre': 'active' as EdgeState } }) },
+    // Trader creates order → deposits tokenIn
+    { delay: 300, sidePanel: sidePanels.create, apply: (s: FlowState) => ({ nodeStates: { ...s.nodeStates, trader: 'active' as NodeState } }) },
+    { delay: 600, apply: (s: FlowState) => ({ nodeStates: { ...s.nodeStates, trader: 'completed' as NodeState }, edgeStates: { ...s.edgeStates, 'trader-swap': 'active' as EdgeState } }) },
+    { delay: 400, apply: (s: FlowState) => ({ edgeStates: { ...s.edgeStates, 'trader-swap': 'completed' as EdgeState }, nodeStates: { ...s.nodeStates, swap: 'active' as NodeState } }) },
+    { delay: 600, apply: (s: FlowState) => ({ nodeStates: { ...s.nodeStates, swap: 'completed' as NodeState } }) },
+    // LP fills order → deposits tokenOut → emits ComplianceCheckRequested
+    { delay: 400, sidePanel: sidePanels.fill, apply: (s: FlowState) => ({ nodeStates: { ...s.nodeStates, lp: 'active' as NodeState } }) },
+    { delay: 600, apply: (s: FlowState) => ({ nodeStates: { ...s.nodeStates, lp: 'completed' as NodeState }, edgeStates: { ...s.edgeStates, 'lp-swap': 'active' as EdgeState } }) },
+    { delay: 400, apply: (s: FlowState) => ({ edgeStates: { ...s.edgeStates, 'lp-swap': 'completed' as EdgeState }, nodeStates: { ...s.nodeStates, swap: 'active' as NodeState } }) },
+    { delay: 600, apply: (s: FlowState) => ({ edgeStates: { ...s.edgeStates, 'swap-cre': 'active' as EdgeState } }) },
     { delay: 500, sidePanel: sidePanels.checks, apply: (s: FlowState) => ({ edgeStates: { ...s.edgeStates, 'swap-cre': 'completed' as EdgeState }, nodeStates: { ...s.nodeStates, cre: 'active' as NodeState, teeContainer: 'active' as NodeState } }) },
     { delay: 600, apply: (s: FlowState) => ({ edgeStates: { ...s.edgeStates, 'cre-sumsub': 'active' as EdgeState, 'cre-ch-trader': 'active' as EdgeState, 'cre-ch-counter': 'active' as EdgeState } }) },
     { delay: 400, apply: (s: FlowState) => ({ nodeStates: { ...s.nodeStates, sumsub: 'active' as NodeState, chTrader: 'active' as NodeState, chCounter: 'active' as NodeState } }) },
@@ -66,9 +82,9 @@ function buildTradeSequence(): StageSequence {
     { delay: 600, apply: (s: FlowState) => ({ edgeStates: { ...s.edgeStates, 'cre-report': 'completed' as EdgeState, 'cre-ipfs': 'completed' as EdgeState }, nodeStates: { ...s.nodeStates, forwarder: 'active' as NodeState, ipfs: 'active' as NodeState } }) },
     { delay: 400, apply: (s: FlowState) => ({ nodeStates: { ...s.nodeStates, forwarder: 'completed' as NodeState, ipfs: 'completed' as NodeState }, edgeStates: { ...s.edgeStates, 'forwarder-report': 'active' as EdgeState } }) },
     { delay: 400, apply: (s: FlowState) => ({ edgeStates: { ...s.edgeStates, 'forwarder-report': 'completed' as EdgeState }, nodeStates: { ...s.nodeStates, report: 'active' as NodeState } }) },
-    { delay: 400, apply: (s: FlowState) => ({ edgeStates: { ...s.edgeStates, 'report-protocol': 'active' as EdgeState } }) },
-    { delay: 600, apply: (s: FlowState) => ({ edgeStates: { ...s.edgeStates, 'report-protocol': 'completed' as EdgeState }, nodeStates: { ...s.nodeStates, protocol: 'active' as NodeState } }) },
-    { delay: 800, apply: (s: FlowState) => ({ nodeStates: { ...s.nodeStates, cre: 'completed' as NodeState, teeContainer: 'completed' as NodeState, protocol: 'completed' as NodeState } }) },
+    { delay: 400, apply: (s: FlowState) => ({ edgeStates: { ...s.edgeStates, 'report-swap': 'active' as EdgeState } }) },
+    { delay: 600, apply: (s: FlowState) => ({ edgeStates: { ...s.edgeStates, 'report-swap': 'completed' as EdgeState }, nodeStates: { ...s.nodeStates, swap: 'active' as NodeState } }) },
+    { delay: 800, apply: (s: FlowState) => ({ nodeStates: { ...s.nodeStates, cre: 'completed' as NodeState, teeContainer: 'completed' as NodeState, swap: 'completed' as NodeState } }) },
   ]
 }
 
@@ -92,23 +108,23 @@ export default function TradeFlowDrillDown() {
       data: { chainName: 'Arc (Circle)', brandColor: '#06b6d4', showHeader: true, state: 'idle' as NodeState },
       draggable: false, selectable: false },
 
-    // --- User ---
-    { id: 'user', type: 'actorNode', position: { x: 10, y: 120 },
-      data: { label: 'User', role: 'user', state: nodeStates.user || 'idle' },
+    // --- Actors ---
+    { id: 'trader', type: 'actorNode', position: { x: 10, y: 60 },
+      data: { label: 'Trader', role: 'user', state: nodeStates.trader || 'idle' },
+      draggable: false, selectable: false },
+    { id: 'lp', type: 'actorNode', position: { x: 10, y: 180 },
+      data: { label: 'LP', role: 'lp', state: nodeStates.lp || 'idle' },
       draggable: false, selectable: false },
 
     // --- On-chain (Arc) ---
-    { id: 'swap', type: 'contractNode', position: { x: 140, y: 100 },
-      data: { label: 'EscrowSwap', description: 'emit ComplianceCheckRequested', state: nodeStates.swap || 'idle' },
+    { id: 'swap', type: 'contractNode', position: { x: 140, y: 120 },
+      data: { label: 'EscrowSwap', description: 'escrow + compliance gate', state: nodeStates.swap || 'idle' },
       draggable: false, selectable: false },
     { id: 'forwarder', type: 'contractNode', position: { x: 30, y: 300 },
       data: { label: 'KeystoneForwarder', description: 'verifies DON signature', state: nodeStates.forwarder || 'idle' },
       draggable: false, selectable: false },
     { id: 'report', type: 'contractNode', position: { x: 30, y: 370 },
-      data: { label: 'ComplianceReportConsumer', description: 'approves/rejects', state: nodeStates.report || 'idle', complianceResult: 'approved' },
-      draggable: false, selectable: false },
-    { id: 'protocol', type: 'contractNode', position: { x: 30, y: 490 },
-      data: { label: 'Swap Protocol', description: 'onComplianceApproved(tradeId)', state: nodeStates.protocol || 'idle', complianceResult: 'approved' },
+      data: { label: 'ComplianceReportConsumer', description: 'stores report', state: nodeStates.report || 'idle', complianceResult: 'approved' },
       draggable: false, selectable: false },
 
     // --- Inside TEE ---
@@ -137,7 +153,8 @@ export default function TradeFlowDrillDown() {
   const { editableNodes, onNodesChange, onNodeDoubleClick } = useEditableNodes(nodes, 'trade')
 
   const edges: Edge[] = useMemo(() => [
-    { id: 'user-swap', source: 'user', target: 'swap', type: 'dataFlowEdge', data: { state: edgeStates['user-swap'] || 'idle', label: 'swap()' } },
+    { id: 'trader-swap', source: 'trader', target: 'swap', type: 'dataFlowEdge', data: { state: edgeStates['trader-swap'] || 'idle', label: 'createOrder()' } },
+    { id: 'lp-swap', source: 'lp', target: 'swap', type: 'dataFlowEdge', data: { state: edgeStates['lp-swap'] || 'idle', label: 'fillOrderAsync()' } },
     { id: 'swap-cre', source: 'swap', target: 'cre', type: 'onChainEdge', data: { state: edgeStates['swap-cre'] || 'idle', label: 'EVM Log' } },
     { id: 'cre-sumsub', source: 'cre', target: 'sumsub', type: 'confidentialEdge', data: { state: edgeStates['cre-sumsub'] || 'idle', label: 'Confidential HTTP (TEE)' } },
     { id: 'cre-ch-trader', source: 'cre', target: 'chTrader', type: 'confidentialEdge', data: { state: edgeStates['cre-ch-trader'] || 'idle', label: 'Confidential HTTP (TEE)' } },
@@ -146,7 +163,7 @@ export default function TradeFlowDrillDown() {
     { id: 'cre-report', source: 'cre', sourceHandle: 'bottom', target: 'forwarder', targetHandle: 'top', type: 'onChainEdge', data: { state: edgeStates['cre-report'] || 'idle', label: 'writeReport()' } },
     { id: 'forwarder-report', source: 'forwarder', sourceHandle: 'bottom', target: 'report', targetHandle: 'top', type: 'dataFlowEdge', data: { state: edgeStates['forwarder-report'] || 'idle', label: 'onReport()' } },
     { id: 'cre-ipfs', source: 'cre', sourceHandle: 'bottom', target: 'ipfs', targetHandle: 'top', type: 'dataFlowEdge', data: { state: edgeStates['cre-ipfs'] || 'idle', label: 'AuditRecord' } },
-    { id: 'report-protocol', source: 'report', sourceHandle: 'bottom', target: 'protocol', targetHandle: 'top', type: 'callbackEdge', data: { state: edgeStates['report-protocol'] || 'idle', label: 'onComplianceApproved(tradeId)' } },
+    { id: 'report-swap', source: 'report', sourceHandle: 'left', target: 'swap', type: 'callbackEdge', data: { state: edgeStates['report-swap'] || 'idle', label: 'onComplianceApproved(tradeId)' } },
   ], [edgeStates])
 
   const { editableEdges, onEdgesChange, onConnect, onReconnect, onEdgeDoubleClick } = useEditableEdges(edges, 'trade')

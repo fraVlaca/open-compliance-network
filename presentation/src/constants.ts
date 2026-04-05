@@ -43,9 +43,12 @@ export const DEMO = {
     // compliance check is transparent
     // existing trade logic
 }`,
-    pattern3: `function swap(...) external {
-    emit ComplianceCheckRequested(tradeId, msg.sender, counterparty, asset, amount);
-    // CRE runs checks → auto-calls onComplianceApproved → trade executes
+    pattern3: `// 1. Trigger check
+emit ComplianceCheckRequested(tradeId, msg.sender, counterparty, asset, amount);
+
+// 2. Receive result (called by CRE via ComplianceReportConsumer)
+function onComplianceApproved(bytes32 tradeId) external onlyForwarder {
+    _settleTrade(tradeId);
 }`,
   },
   sampleCredential: {

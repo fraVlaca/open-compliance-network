@@ -32,7 +32,7 @@ const overviewSidePanel = {
     'Integration': {
       'Simplest': 'require(consumer.isVerified(wallet))  // 1 line of Solidity',
       'ACE': 'function trade() external runPolicy { }',
-      'Async': 'emit ComplianceCheckRequested(...)  // CRE auto-callbacks',
+      'Async': 'emit event + onComplianceApproved() callback  // 2 lines',
     },
     'Deployed on': 'Arc Testnet (Circle) — USDC-native, institutional-first',
     'Providers': ['Sumsub (KYC/AML/Sanctions)', 'Chainalysis (wallet risk/exposure)', 'Notabene (Travel Rule — planned July 2026)'],
