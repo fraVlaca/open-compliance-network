@@ -100,7 +100,7 @@ export default function IntegratorPage() {
               <Users className="w-6 h-6 text-accent-purple" />
             </div>
             <div className="flex-1">
-              <div className="font-medium">{ROLE_NAMES[role]} — Active</div>
+              <div className="font-medium">{ROLE_NAMES[role]} - Active</div>
               <div className="text-sm text-gray-400 font-mono">APP-ID: {appId?.slice(0, 16)}...</div>
             </div>
             <span className="badge-verified">{ROLE_NAMES[role]}</span>
@@ -142,7 +142,7 @@ export default function IntegratorPage() {
               </>
             )}
 
-            {/* Loading token — CRE Workflow D running */}
+            {/* Loading token - CRE Workflow D running */}
             {kycStep === "loading-token" && (
               <div className="text-center py-8">
                 <Loader2 className="w-8 h-8 text-accent-blue animate-spin mx-auto mb-3" />
@@ -211,7 +211,7 @@ export default function IntegratorPage() {
             )}
           </div>
 
-          {/* User Compliance Lookup — triggers CRE Workflow C */}
+          {/* User Compliance Lookup - triggers CRE Workflow C */}
           <div className="card space-y-4">
             <h2 className="font-semibold flex items-center gap-2">
               <Search className="w-5 h-5 text-accent-cyan" />
@@ -258,7 +258,7 @@ export default function IntegratorPage() {
                 <div className={`flex items-center gap-3 p-3 rounded-lg ${lookupResult.isVerified ? "bg-accent-green/10 border border-accent-green/20" : "bg-accent-red/10 border border-accent-red/20"}`}>
                   {lookupResult.isVerified ? <ShieldCheck className="w-5 h-5 text-accent-green" /> : <ShieldX className="w-5 h-5 text-accent-red" />}
                   <div>
-                    <div className="text-sm font-medium">{lookupResult.isVerified ? "Verified — safe to trade" : "Not Verified"}</div>
+                    <div className="text-sm font-medium">{lookupResult.isVerified ? "Verified - safe to trade" : "Not Verified"}</div>
                     <div className="text-xs text-gray-400 font-mono">{lookupAddress.slice(0, 20)}...</div>
                   </div>
                 </div>
@@ -268,7 +268,7 @@ export default function IntegratorPage() {
                   <div className="p-3 rounded-lg bg-surface-700/30 border border-surface-600/50 space-y-2">
                     <div className="text-xs font-semibold text-gray-300 flex items-center gap-1.5">
                       <FileCheck className="w-3.5 h-3.5 text-accent-cyan" />
-                      CRE Workflow C — Identity Audit
+                      CRE Workflow C - Identity Audit
                     </div>
                     <div className="grid grid-cols-2 gap-2 text-xs">
                       <div>
@@ -279,7 +279,7 @@ export default function IntegratorPage() {
                       </div>
                       <div>
                         <span className="text-gray-500">Role:</span>{" "}
-                        <span className="text-gray-300">{lookupResult.audit.requesterRole || "—"}</span>
+                        <span className="text-gray-300">{lookupResult.audit.requesterRole || "-"}</span>
                       </div>
                       {lookupResult.audit.reason && (
                         <div className="col-span-2">
@@ -317,7 +317,7 @@ export default function IntegratorPage() {
             )}
           </div>
 
-          {/* Audit Trail — real on-chain data */}
+          {/* Audit Trail - real on-chain data */}
           <AuditTrail />
         </>
       ) : (

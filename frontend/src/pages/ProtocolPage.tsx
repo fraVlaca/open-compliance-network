@@ -228,7 +228,7 @@ export default function ProtocolPage() {
         </div>
       </div>
 
-      {/* Audit Trail — on-chain compliance reports */}
+      {/* Audit Trail - on-chain compliance reports */}
       <AuditTrail />
     </div>
   );

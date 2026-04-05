@@ -107,7 +107,7 @@ export default function LPPage() {
               <TrendingUp className="w-6 h-6 text-accent-green" />
             </div>
             <div className="flex-1">
-              <div className="font-medium">{ROLE_NAMES[role]} — Active</div>
+              <div className="font-medium">{ROLE_NAMES[role]} - Active</div>
               <div className="text-sm text-gray-400 font-mono">
                 APP-ID: {appId?.slice(0, 16)}...
               </div>
@@ -151,7 +151,7 @@ export default function LPPage() {
                   <ShieldX className="w-5 h-5 text-accent-red" />
                 )}
                 <span className="text-sm">
-                  {userVerified ? "Verified — safe to trade" : "Not verified"}
+                  {userVerified ? "Verified - safe to trade" : "Not verified"}
                 </span>
               </div>
             )}
@@ -165,7 +165,7 @@ export default function LPPage() {
             </h2>
             <p className="text-sm text-gray-400">
               Look up the compliance report for any trade. The full audit record
-              is on IPFS — fetch by CID and verify against the on-chain hash.
+              is on IPFS - fetch by CID and verify against the on-chain hash.
             </p>
             <div className="flex gap-3">
               <input
@@ -270,8 +270,8 @@ export default function LPPage() {
                     }`}>
                       {hashVerified ? <CheckCircle2 className="w-4 h-4" /> : <XCircle className="w-4 h-4" />}
                       {hashVerified
-                        ? "Hash verified — keccak256(IPFS record) matches on-chain auditHash"
-                        : "Hash mismatch — record may have been tampered with"}
+                        ? "Hash verified - keccak256(IPFS record) matches on-chain auditHash"
+                        : "Hash mismatch - record may have been tampered with"}
                     </div>
                   )}
                 </div>

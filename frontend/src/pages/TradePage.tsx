@@ -71,7 +71,7 @@ export default function TradePage() {
   const { writeContract: createOrder, data: createTx } = useWriteContract();
   const { isLoading: creating, isSuccess: createSuccess } = useWaitForTransactionReceipt({ hash: createTx });
 
-  // Fill order (async — emits ComplianceCheckRequested for CRE)
+  // Fill order (async - emits ComplianceCheckRequested for CRE)
   const { writeContract: fillOrder, data: fillTx } = useWriteContract();
   const { isLoading: filling, isSuccess: fillSuccess } = useWaitForTransactionReceipt({ hash: fillTx });
 
@@ -134,7 +134,7 @@ export default function TradePage() {
       setSteps([
         { label: "isVerified(wallet) = true", status: "done" },
         { label: "USDC deposited into escrow", status: "done", detail: createTx },
-        { label: "Order open — waiting for taker to fill", status: "done" },
+        { label: "Order open - waiting for taker to fill", status: "done" },
       ]);
     }
   }, [creating, createSuccess, createTx]);
@@ -162,10 +162,14 @@ export default function TradePage() {
 
           if (data.tradeId || data.approved !== undefined) {
             const approved = data.approved === true;
+            const ipfsLine = data.ipfsCid
+              ? { label: `IPFS: ${data.ipfsCid}`, status: "done" as const, detail: `https://gateway.pinata.cloud/ipfs/${data.ipfsCid}` }
+              : null;
             setFillSteps([
               { label: "Taker EURC deposited into escrow", status: "done", detail: fillTx },
               { label: "ComplianceCheckRequested event emitted", status: "done" },
-              { label: `CRE Workflow B: ${approved ? "APPROVED" : "REJECTED"} — risk score: ${data.riskScore ?? 0}`, status: "done" },
+              { label: `CRE Workflow B: ${approved ? "APPROVED" : "REJECTED"} - risk score: ${data.riskScore ?? 0}`, status: "done" },
+              ...(ipfsLine ? [ipfsLine] : []),
               { label: approved
                   ? "Trade settled via onComplianceApproved() auto-callback"
                   : `Rejected: ${(data.flags || []).join(", ") || "KYC not approved"}`,
@@ -268,7 +272,7 @@ export default function TradePage() {
 
       <ProtocolMetrics />
 
-      {/* Inline KYC — verify directly from the trade page */}
+      {/* Inline KYC - verify directly from the trade page */}
       {!isVerified && !verifyLoading && kycStep !== "done" && (
         <div className="card space-y-4 border-accent-blue/30">
           <div className="flex items-center gap-2">
@@ -277,7 +281,7 @@ export default function TradePage() {
           </div>
           <p className="text-xs text-gray-400">
             The contract calls <code className="text-accent-blue">require(isVerified(msg.sender))</code>.
-            Verify your identity below to trade — CRE Workflow D generates a Sumsub token, then Workflow A issues your on-chain credential.
+            Verify your identity below to trade - CRE Workflow D generates a Sumsub token, then Workflow A issues your on-chain credential.
           </p>
 
           {kycStep === "idle" && (
@@ -325,7 +329,7 @@ export default function TradePage() {
           Create Escrow Order
         </h2>
         <p className="text-xs text-gray-400">
-          Swap USDC for EURC. Contract checks <code className="text-accent-green">isVerified(msg.sender)</code> — your on-chain KYC credential from CRE Workflow A.
+          Swap USDC for EURC. Contract checks <code className="text-accent-green">isVerified(msg.sender)</code> - your on-chain KYC credential from CRE Workflow A.
         </p>
 
         <div>
@@ -353,12 +357,12 @@ export default function TradePage() {
       <div className="card space-y-4">
         <h2 className="font-semibold flex items-center gap-2">
           <Shield className="w-5 h-5 text-accent-purple" />
-          Order Book — Per-Trade Compliance
+          Order Book - Per-Trade Compliance
           <span className="text-xs bg-accent-purple/20 text-accent-purple px-2 py-0.5 rounded-full">CRE Workflow B</span>
         </h2>
         <p className="text-xs text-gray-400">
           Clicking <strong>Fill (Async)</strong> calls <code>fillOrderAsync()</code> which emits <code>ComplianceCheckRequested</code>.
-          The backend triggers CRE Workflow B — Confidential HTTP to Sumsub + Chainalysis — then auto-callback settles the trade.
+          The backend triggers CRE Workflow B - Confidential HTTP to Sumsub + Chainalysis - then auto-callback settles the trade.
         </p>
 
         {orders.length === 0 ? (
@@ -414,7 +418,7 @@ export default function TradePage() {
             <div className="w-6 h-6 rounded-full bg-accent-green/20 text-accent-green flex items-center justify-center text-xs font-bold flex-shrink-0">1</div>
             <div>
               <div className="font-medium text-sm">Synchronous (Create Order)</div>
-              <div className="text-gray-400 mt-0.5"><code>require(isVerified(msg.sender))</code> — reads on-chain KYC credential. Instant, no CRE at trade time.</div>
+              <div className="text-gray-400 mt-0.5"><code>require(isVerified(msg.sender))</code> - reads on-chain KYC credential. Instant, no CRE at trade time.</div>
             </div>
           </div>
           <div className="flex gap-2">

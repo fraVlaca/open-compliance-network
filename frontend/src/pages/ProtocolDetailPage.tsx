@@ -24,6 +24,7 @@ import ComplianceFlowTracker, {
   type FlowStep,
 } from "../components/ComplianceFlowTracker";
 import DecryptButton from "../components/DecryptButton";
+import AuditTrail from "../components/AuditTrail";
 
 export default function ProtocolDetailPage() {
   const { workspaceId } = useParams<{ workspaceId: string }>();
@@ -77,7 +78,7 @@ export default function ProtocolDetailPage() {
             detail: "isVerified() on ComplianceCredentialConsumer",
           },
           {
-            label: "CRE Workflow C — Identity Audit",
+            label: "CRE Workflow C - Identity Audit",
             status:
               lookupPhase === "cre"
                 ? "active"
@@ -208,7 +209,7 @@ export default function ProtocolDetailPage() {
       {/* Access-gated content */}
       {isAdmin ? (
         <>
-          {/* Compliance Lookup — CRE Workflow C */}
+          {/* Compliance Lookup - CRE Workflow C */}
           <div className="card space-y-4">
             <h2 className="font-semibold flex items-center gap-2">
               <Search className="w-5 h-5 text-accent-cyan" />
@@ -279,7 +280,7 @@ export default function ProtocolDetailPage() {
                   <div>
                     <div className="text-sm font-medium">
                       {lookupResult.isVerified
-                        ? "Verified — KYC credential active"
+                        ? "Verified - KYC credential active"
                         : "Not Verified"}
                     </div>
                     <div className="text-xs text-gray-400 font-mono">
@@ -293,7 +294,7 @@ export default function ProtocolDetailPage() {
                   <div className="p-4 rounded-lg bg-surface-700/30 border border-surface-600/50 space-y-3">
                     <div className="text-xs font-semibold text-gray-300 flex items-center gap-1.5">
                       <FileCheck className="w-3.5 h-3.5 text-accent-cyan" />
-                      KYC Data — CRE Workflow C (Identity Audit)
+                      KYC Data - CRE Workflow C (Identity Audit)
                     </div>
                     <div className="grid grid-cols-2 gap-3 text-xs">
                       <div>
@@ -311,7 +312,7 @@ export default function ProtocolDetailPage() {
                       <div>
                         <span className="text-gray-500">Requester Role:</span>{" "}
                         <span className="text-gray-300">
-                          {lookupResult.audit.requesterRole || "—"}
+                          {lookupResult.audit.requesterRole || "-"}
                         </span>
                       </div>
                       {lookupResult.audit.identity && (
@@ -374,7 +375,7 @@ export default function ProtocolDetailPage() {
                                 : "text-accent-red"
                             }
                           >
-                            {lookupResult.audit.amlScreening.riskScore ?? "—"}/10
+                            {lookupResult.audit.amlScreening.riskScore ?? "-"}/10
                           </span>
                         </div>
                         <div>
@@ -409,7 +410,7 @@ export default function ProtocolDetailPage() {
                       <div className="text-xs text-gray-500">
                         {lookupResult.audit.authorized
                           ? "No AML screening data returned for this wallet."
-                          : "AML data restricted — insufficient access level."}
+                          : "AML data restricted - insufficient access level."}
                       </div>
                     )}
                     <p className="text-[10px] text-gray-600 mt-1">
@@ -428,6 +429,9 @@ export default function ProtocolDetailPage() {
               </div>
             )}
           </div>
+
+          {/* Audit Trail — on-chain compliance reports */}
+          <AuditTrail />
         </>
       ) : wsName ? (
         /* Non-admin restricted view */
