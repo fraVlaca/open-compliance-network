@@ -13,15 +13,15 @@ import { DEMO } from '../constants'
 
 const sidePanels: Record<string, SidePanelData> = {
   pattern1: {
-    stage: 'Integration', beat: 'Pattern 1', title: 'Simplest — 1 Line of Solidity',
+    stage: 'Integration', beat: 'Pattern 1', title: 'Simplest - 1 Line of Solidity',
     json: {
       'Code': 'require(consumer.isVerified(msg.sender), "Not compliant")',
-      'How it works': 'Reads on-chain credential synchronously — like reading a Chainlink price feed',
+      'How it works': 'Reads on-chain credential synchronously - like reading a Chainlink price feed',
       'Best for': 'Any protocol that needs KYC gating. No ACE framework needed.',
       'Contract': 'ComplianceCredentialConsumer.isVerified(wallet)',
-      'Interface': 'IComplianceCredentialConsumer — any contract can read compliance status',
+      'Interface': 'IComplianceCredentialConsumer - any contract can read compliance status',
       'Credential source': 'Written by CRE Workflow A → ACE CredentialRegistry',
-      'Gas cost': 'One SLOAD — minimal, same tx',
+      'Gas cost': 'One SLOAD - minimal, same tx',
       'Any protocol on Arc': 'Can integrate compliance with this single line. No KYC backend, no Sumsub account, no compliance team.',
     },
     highlightFields: ['Code', 'Any protocol on Arc'],
@@ -47,9 +47,9 @@ const sidePanels: Record<string, SidePanelData> = {
       'Best for': 'Deep per-trade checks: sanctions + counterparty risk + jurisdiction + structuring',
       'User experience': 'ONE user tx. CRE auto-callbacks settle the trade via onComplianceApproved.',
       'Deployed': `EscrowSwap on Arc Testnet: ${DEMO.contracts.escrowSwap}`,
-      'Demo contract': 'DemoSwapProtocol.sol — implements all 3 patterns',
-      'Callback interface': 'IComplianceCallback — onComplianceApproved() / onComplianceRejected()',
-      'Cross-chain ready': 'CCIDs = keccak256(abi.encodePacked("compliance-v1", wallet)) — portable across EVM chains via CCIP',
+      'Demo contract': 'DemoSwapProtocol.sol - implements all 3 patterns',
+      'Callback interface': 'IComplianceCallback - onComplianceApproved() / onComplianceRejected()',
+      'Cross-chain ready': 'CCIDs = keccak256(abi.encodePacked("compliance-v1", wallet)) - portable across EVM chains via CCIP',
     },
     highlightFields: ['User experience', 'Cross-chain ready', 'Flow'],
   },

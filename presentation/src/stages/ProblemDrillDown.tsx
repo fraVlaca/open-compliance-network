@@ -15,8 +15,8 @@ const STEPS = [
   { id: 'step2', step: 2, title: 'Adds KYC infrastructure', description: 'Someone must hold the Sumsub account, manage API keys, store/process PII (passports, addresses), respond to GDPR requests.' },
   { id: 'step3', step: 3, title: 'Creates a legal entity', description: 'A foundation or company must operate the KYC backend. FATF: "entity exercising control = VASP." The entity crystallizes.' },
   { id: 'step4', step: 4, title: 'Classified as CASP under MiCA', description: 'Identifiable entity providing crypto-asset services = CASP. Must license in home member state. Lost the "fully decentralized" exemption.' },
-  { id: 'step5', step: 5, title: 'Regulatory escalator — no stop button', description: 'KYC → transaction monitoring → Travel Rule → SAR filing → compliance officer → capital reserves → 5-year record keeping → annual audits' },
-  { id: 'step6', step: 6, title: 'The deadlock', description: 'Most protocols choose NOT to add KYC — forgoing institutional capital. Aave Arc tried: created a centralized sidecar, fragmented liquidity, didn\'t scale.' },
+  { id: 'step5', step: 5, title: 'Regulatory escalator - no stop button', description: 'KYC → transaction monitoring → Travel Rule → SAR filing → compliance officer → capital reserves → 5-year record keeping → annual audits' },
+  { id: 'step6', step: 6, title: 'The deadlock', description: 'Most protocols choose NOT to add KYC - forgoing institutional capital. Aave Arc tried: created a centralized sidecar, fragmented liquidity, didn\'t scale.' },
 ]
 
 const sidePanels: Record<string, SidePanelData> = {
@@ -27,13 +27,13 @@ const sidePanels: Record<string, SidePanelData> = {
     json: {
       'The demand': 'Institutional capital wants compliant DeFi access',
       'The blocker': 'DeFi protocols have no KYC infrastructure',
-      'The trap': 'Adding KYC destroys decentralization — and triggers CASP classification',
+      'The trap': 'Adding KYC destroys decentralization - and triggers CASP classification',
       'EU DeFi impact (2025)': {
         'DEX volume decline': '-18.9% Q1 2025 (largest ever)',
         'Wallet creation decline': '-22%',
         'Users switching offshore': '40%+ of EU traders',
       },
-      'ECB warning': 'Most DeFi DAOs don\'t meet "fully decentralized" threshold — governance token concentration, upgrade mechanisms, treasury control all count against them',
+      'ECB warning': 'Most DeFi DAOs don\'t meet "fully decentralized" threshold - governance token concentration, upgrade mechanisms, treasury control all count against them',
     },
     highlightFields: ['The trap', 'EU DeFi impact (2025)', 'ECB warning'],
   },
@@ -43,7 +43,7 @@ const sidePanels: Record<string, SidePanelData> = {
     title: 'WHO Runs the KYC?',
     json: {
       'Someone must': ['Hold the Sumsub account', 'Manage Chainalysis API keys', 'Store/process PII (passports, addresses)', 'Respond to GDPR deletion requests', 'Sign Data Processing Agreements', 'Make approval/denial decisions'],
-      'That someone': 'Must be a legal entity — foundation, company, or DAO',
+      'That someone': 'Must be a legal entity - foundation, company, or DAO',
       'FATF position': 'Identifiable entity with control over protocol access = VASP, regardless of "decentralized" label',
       'Censorship vector': 'Whoever controls KYC controls access. One entity decides who can use the "decentralized" protocol.',
     },
@@ -72,9 +72,9 @@ const sidePanels: Record<string, SidePanelData> = {
     beat: 'The Deadlock',
     title: 'Every Option Loses',
     json: {
-      'Option A — Add KYC': 'Entity crystallization → CASP → regulatory escalator → "decentralized in name only"',
-      'Option B — Stay decentralized': 'No institutional capital. Shrinking EU market. Excluded from fastest-growing segment.',
-      'Option C — Geo-block EU': 'Lose EU market entirely. Whack-a-mole as more jurisdictions regulate.',
+      'Option A - Add KYC': 'Entity crystallization → CASP → regulatory escalator → "decentralized in name only"',
+      'Option B - Stay decentralized': 'No institutional capital. Shrinking EU market. Excluded from fastest-growing segment.',
+      'Option C - Geo-block EU': 'Lose EU market entirely. Whack-a-mole as more jurisdictions regulate.',
       'Aave Arc precedent': 'Tried a permissioned sidecar with Fireblocks whitelisting. Created a centralized product, fragmented liquidity, Fireblocks CEO admitted "it does go against DeFi principles."',
       'Result': 'Most protocols choose Option B. Institutions stay out. Everyone loses.',
       'What\'s needed': 'A way to serve institutions WITHOUT becoming the KYC operator',
@@ -102,7 +102,7 @@ function buildProblemSequence(): StageSequence {
     { delay: 1200, apply: (s: FlowState) => ({ nodeStates: { ...s.nodeStates, step5: 'completed' as NodeState }, edgeStates: { ...s.edgeStates, 'step5-step6': 'active' as EdgeState } }) },
     // Step 6: The deadlock
     { delay: 400, sidePanel: sidePanels.deadlock, apply: (s: FlowState) => ({ edgeStates: { ...s.edgeStates, 'step5-step6': 'completed' as EdgeState }, nodeStates: { ...s.nodeStates, step6: 'active' as NodeState } }) },
-    // Final: all complete — the trap is closed
+    // Final: all complete - the trap is closed
     { delay: 1500, apply: (s: FlowState) => ({ nodeStates: { ...s.nodeStates, step6: 'completed' as NodeState } }) },
   ]
 }
@@ -118,7 +118,7 @@ export default function ProblemDrillDown() {
   const { editMode } = useLayoutEditor()
 
   const nodes: Node[] = useMemo(() => {
-    // Two columns: steps 1-3 left, steps 4-6 right — shows the escalation
+    // Two columns: steps 1-3 left, steps 4-6 right - shows the escalation
     const cols = [
       { x: 20, y: 30 },   // step 1
       { x: 20, y: 180 },  // step 2

@@ -17,7 +17,7 @@ const sidePanels: Record<string, SidePanelData> = {
       'Capabilities': ['KYC / CDD', 'Sanctions screening (person)', 'PEP screening', 'Adverse media', 'Document verification'],
       'Cost': '$10-50K/year per organization',
       'Sharing': 'Reusable KYC Networks (identity only, not sanctions)',
-      'Limitation': 'Source keys dashboard-only — no programmatic multi-tenant',
+      'Limitation': 'Source keys dashboard-only - no programmatic multi-tenant',
     },
     highlightFields: ['Limitation', 'Sharing'],
   },
@@ -26,7 +26,7 @@ const sidePanels: Record<string, SidePanelData> = {
     json: {
       'Capabilities': ['Deep wallet risk scoring', 'Counterparty screening', 'Transaction monitoring', 'Entity attribution', 'Exposure analysis (mixers, darknet, sanctioned)'],
       'Cost': '$100-500K/year per organization',
-      'Sharing': 'ZERO sharing mechanism — each org screens independently',
+      'Sharing': 'ZERO sharing mechanism - each org screens independently',
       'Impact': '4 parties × $100-500K = $400K-2M/year for same wallets',
     },
     highlightFields: ['Sharing', 'Impact'],
@@ -37,7 +37,7 @@ const sidePanels: Record<string, SidePanelData> = {
       'What nobody offers': {
         'Atomic per-trade orchestration': 'No provider combines KYC + wallet analytics + Travel Rule + jurisdiction into one atomic check',
         'Shared audit trail': 'No cross-provider unified record per trade. Regulator asks 4 parties, gets 4 partial answers.',
-        'Verifiable execution': 'LP asks "did the protocol really screen this wallet?" — no way to verify.',
+        'Verifiable execution': 'LP asks "did the protocol really screen this wallet?" - no way to verify.',
         'Elimination of redundancy': 'Chainalysis: zero sharing, $100-500K per org. 4 orgs screen the same wallets independently.',
       },
       'Total fragmentation cost': '$1.3-4.4M/year across 4 parties for the SAME compliance coverage',
@@ -73,7 +73,7 @@ export default function GapDrillDown() {
     { id: 'chainalysis', type: 'providerNode', position: { x: 280, y: 60 }, data: { label: 'Chainalysis', provider: 'chainalysis', purpose: 'Wallet risk, exposure, monitoring', state: nodeStates.chainalysis || 'idle' }, draggable: false, selectable: false },
     { id: 'notabene', type: 'providerNode', position: { x: 510, y: 60 }, data: { label: 'Notabene', provider: 'notabene', purpose: 'Travel Rule (IVMS101)', state: nodeStates.notabene || 'idle' }, draggable: false, selectable: false },
     { id: 'gapTable', type: 'comparisonNode', position: { x: 80, y: 240 }, data: {
-      title: 'Fragmentation Gap — What Nobody Offers',
+      title: 'Fragmentation Gap - What Nobody Offers',
       columns: ['Capability', 'Sumsub', 'Chainalysis', 'Notabene', 'Shared?'],
       rows: [
         ['KYC / CDD', 'Yes', 'No', 'No', 'Partial'],

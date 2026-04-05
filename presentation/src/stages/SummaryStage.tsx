@@ -53,7 +53,7 @@ export default function SummaryStage() {
 
         {/* Deployed contracts */}
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1.4, duration: 0.6 }}>
-          <div className="text-xs text-slate-500 uppercase tracking-wider mb-3 text-center">Deployed on Arc Testnet (Circle) — Chain ID 5042002 — USDC-native gas</div>
+          <div className="text-xs text-slate-500 uppercase tracking-wider mb-3 text-center">Deployed on Arc Testnet (Circle) - Chain ID 5042002 - USDC-native gas</div>
           <div className="grid grid-cols-2 gap-2">
             {contracts.map(([name, address], i) => (
               <motion.div key={name} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1.4 + i * 0.1 }}

@@ -14,17 +14,17 @@ const sidePanels: Record<string, SidePanelData> = {
   create: {
     stage: 'Trade Flow', beat: 'Order Creation', title: 'Trader Creates Escrow',
     json: {
-      'Prerequisite': 'Trader must be KYC verified — require(isVerified(msg.sender))',
+      'Prerequisite': 'Trader must be KYC verified - require(isVerified(msg.sender))',
       'Trader action': 'createOrder(taker, tokenIn, tokenOut, amountIn, amountOut)',
       'Contract': 'EscrowSwap escrows tokenIn from trader',
-      'Order status': 'Open — waiting for LP to fill',
+      'Order status': 'Open - waiting for LP to fill',
     },
     highlightFields: ['Prerequisite', 'Trader action'],
   },
   fill: {
     stage: 'Trade Flow', beat: 'Order Fill', title: 'LP Fills Order',
     json: {
-      'LP action': 'fillOrderAsync(orderId) — deposits tokenOut into escrow',
+      'LP action': 'fillOrderAsync(orderId) - deposits tokenOut into escrow',
       'Both sides escrowed': 'EscrowSwap now holds tokenIn (trader) + tokenOut (LP)',
       'Event emitted': 'ComplianceCheckRequested(tradeId, LP, trader, asset, amount)',
       'CRE detects': 'EVM Log Trigger picks up event within seconds',
@@ -34,7 +34,7 @@ const sidePanels: Record<string, SidePanelData> = {
   checks: {
     stage: 'Trade Flow', beat: 'Compliance Checks', title: 'CRE Workflow B',
     json: {
-      'Triggered by': 'EVM Log — ComplianceCheckRequested event',
+      'Triggered by': 'EVM Log - ComplianceCheckRequested event',
       'Namespace': 'externalUserId = {workspaceId}:{brokerAppId}:{trader}',
       'Parallel checks': {
         'Sumsub': 'Trader KYC status, sanctions, PEP',
@@ -50,7 +50,7 @@ const sidePanels: Record<string, SidePanelData> = {
     stage: 'Trade Flow', beat: 'Report + Auto-Callback', title: 'Auto-Execution',
     json: {
       'ComplianceReport (on-chain)': { tradeId: '0xabc...', trader: '0xUser', counterparty: '0xLP', sourceContract: '0xSwap', approved: true, riskScore: 2, auditHash: '0x9f2e...', ipfsCid: 'QmXyz...' },
-      'IPFS': 'Full AuditRecord uploaded via Pinata — content-addressed',
+      'IPFS': 'Full AuditRecord uploaded via Pinata - content-addressed',
       'Auto-callback': 'ComplianceReportConsumer calls EscrowSwap.onComplianceApproved(tradeId) → escrow settles, tokens swap',
       'If rejected': 'EscrowSwap.onComplianceRejected(tradeId) → refunds both maker and taker',
       'Result': 'One fill tx → CRE checks → DON consensus → auto-callback → escrow settles',

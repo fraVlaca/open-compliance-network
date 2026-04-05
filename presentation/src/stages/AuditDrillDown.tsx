@@ -14,7 +14,7 @@ import type { StageSequence, FlowState, NodeState, EdgeState, SidePanelData } fr
 
 const sidePanels: Record<string, SidePanelData> = {
   workflowC: {
-    stage: 'Audit', beat: 'Workflow C — Identity Audit', title: 'KYC/AML Data Access',
+    stage: 'Audit', beat: 'Workflow C - Identity Audit', title: 'KYC/AML Data Access',
     json: {
       'Trigger': 'Integrator signs HTTP request with wallet',
       'Inside CRE': {
@@ -29,7 +29,7 @@ const sidePanels: Record<string, SidePanelData> = {
     highlightFields: ['Inside CRE', 'Scoping rules', 'PII never stored'],
   },
   readReport: {
-    stage: 'Audit', beat: 'Step 1 — Read Report', title: 'On-Chain Compliance Report',
+    stage: 'Audit', beat: 'Step 1 - Read Report', title: 'On-Chain Compliance Report',
     json: {
       'Call': 'ComplianceReportConsumer.getReport(tradeId)',
       'Returns': {
@@ -46,23 +46,23 @@ const sidePanels: Record<string, SidePanelData> = {
     highlightFields: ['Returns', 'DON-signed'],
   },
   verifyCode: {
-    stage: 'Audit', beat: 'Step 2 — Verify Code', title: 'Was This the Right Code?',
+    stage: 'Audit', beat: 'Step 2 - Verify Code', title: 'Was This the Right Code?',
     json: {
       '1. Fetch source': 'Clone the open-source workflow from GitHub',
       '2. Compile locally': 'cre workflow build → produces WASM binary',
       '3. Hash the binary': 'keccak256(binary + config) → local hash',
       '4. Compare': 'localHash === report.workflowId?',
       '✓ Match': 'This EXACT code produced the compliance decision. If even one line was different, the hash would not match.',
-      'Self-binding': 'The operator cannot change the code without the workflowId changing — visible to everyone.',
+      'Self-binding': 'The operator cannot change the code without the workflowId changing - visible to everyone.',
     },
     highlightFields: ['4. Compare', '✓ Match', 'Self-binding'],
   },
   verifyAudit: {
-    stage: 'Audit', beat: 'Step 3 — Verify Audit', title: 'Is the Evidence Real?',
+    stage: 'Audit', beat: 'Step 3 - Verify Audit', title: 'Is the Evidence Real?',
     json: {
       '1. Extract ipfsCid': 'From the on-chain report',
       '2. Fetch from IPFS': 'GET https://gateway.pinata.cloud/ipfs/{cid}',
-      '3. Get full AuditRecord': 'All provider responses, jurisdiction rules, risk scores — point-in-time snapshot',
+      '3. Get full AuditRecord': 'All provider responses, jurisdiction rules, risk scores - point-in-time snapshot',
       '4. Hash the record': 'keccak256(JSON.stringify(auditRecord))',
       '5. Compare': 'computedHash === report.auditHash?',
       '✓ Match': 'The evidence is exactly what the DON produced at trade time. Content-addressed + hash-verified = triple tamper-proof.',
@@ -80,7 +80,7 @@ const sidePanels: Record<string, SidePanelData> = {
       },
       'Self-binding': 'Open code + pinned workflowId + DON consensus = operator CANNOT cheat',
       'Centralized alt': 'Trust one server. Could selectively approve. No proof otherwise.',
-      'DECO (future)': 'ZK proof of TLS session — mathematical proof Sumsub returned "verified"',
+      'DECO (future)': 'ZK proof of TLS session - mathematical proof Sumsub returned "verified"',
     },
     highlightFields: ['What we proved', 'Self-binding'],
   },
@@ -90,7 +90,7 @@ const sidePanels: Record<string, SidePanelData> = {
 
 function buildAuditSequence(): StageSequence {
   return [
-    // ═══ LEFT: Workflow C — KYC/AML data access ═══
+    // ═══ LEFT: Workflow C - KYC/AML data access ═══
     { delay: 300, sidePanel: sidePanels.workflowC, apply: (s: FlowState) => ({ nodeStates: { ...s.nodeStates, integrator: 'active' as NodeState } }) },
     // Integrator → CRE
     { delay: 800, apply: (s: FlowState) => ({ nodeStates: { ...s.nodeStates, integrator: 'completed' as NodeState }, edgeStates: { ...s.edgeStates, 'integrator-wfC': 'active' as EdgeState } }) },
@@ -99,13 +99,13 @@ function buildAuditSequence(): StageSequence {
     { delay: 500, apply: (s: FlowState) => ({ edgeStates: { ...s.edgeStates, 'wfC-registry': 'active' as EdgeState, 'wfC-credentialReg': 'active' as EdgeState } }) },
     { delay: 400, apply: (s: FlowState) => ({ edgeStates: { ...s.edgeStates, 'wfC-registry': 'completed' as EdgeState, 'wfC-credentialReg': 'completed' as EdgeState }, nodeStates: { ...s.nodeStates, registryCheck: 'active' as NodeState, credentialCheck: 'active' as NodeState } }) },
     { delay: 500, apply: (s: FlowState) => ({ nodeStates: { ...s.nodeStates, registryCheck: 'completed' as NodeState, credentialCheck: 'completed' as NodeState } }) },
-    // CRE calls Sumsub (RoundTripEdge — request path)
+    // CRE calls Sumsub (RoundTripEdge - request path)
     { delay: 300, apply: (s: FlowState) => ({ edgeStates: { ...s.edgeStates, 'wfC-sumsub': 'active' as EdgeState } }) },
     { delay: 500, apply: (s: FlowState) => ({ edgeStates: { ...s.edgeStates, 'wfC-sumsub': 'completed' as EdgeState }, nodeStates: { ...s.nodeStates, sumsubFetch: 'active' as NodeState } }) },
-    // Sumsub returns KYC data (RoundTripEdge — response path)
+    // Sumsub returns KYC data (RoundTripEdge - response path)
     { delay: 700, apply: (s: FlowState) => ({ nodeStates: { ...s.nodeStates, sumsubFetch: 'completed' as NodeState }, edgeStates: { ...s.edgeStates, 'sumsub-wfC-return': 'active' as EdgeState } }) },
     { delay: 500, apply: (s: FlowState) => ({ edgeStates: { ...s.edgeStates, 'sumsub-wfC-return': 'completed' as EdgeState } }) },
-    // CRE encrypts → sends back to integrator (RoundTripEdge — response path)
+    // CRE encrypts → sends back to integrator (RoundTripEdge - response path)
     { delay: 300, apply: (s: FlowState) => ({ edgeStates: { ...s.edgeStates, 'wfC-integrator-return': 'active' as EdgeState } }) },
     { delay: 600, apply: (s: FlowState) => ({ edgeStates: { ...s.edgeStates, 'wfC-integrator-return': 'completed' as EdgeState }, nodeStates: { ...s.nodeStates, wfC: 'completed' as NodeState, teeLeft: 'completed' as NodeState, integrator: 'active' as NodeState } }) },
     { delay: 600, apply: (s: FlowState) => ({ nodeStates: { ...s.nodeStates, integrator: 'completed' as NodeState } }) },
@@ -113,10 +113,10 @@ function buildAuditSequence(): StageSequence {
     // ═══ RIGHT: Audit trail reconciliation ═══
     // LP backend starts verification
     { delay: 600, sidePanel: sidePanels.readReport, apply: (s: FlowState) => ({ nodeStates: { ...s.nodeStates, lpBackend: 'active' as NodeState } }) },
-    // Step 1: Read on-chain report (RoundTripEdge — request path)
+    // Step 1: Read on-chain report (RoundTripEdge - request path)
     { delay: 500, apply: (s: FlowState) => ({ edgeStates: { ...s.edgeStates, 'lp-arcReport': 'active' as EdgeState } }) },
     { delay: 500, apply: (s: FlowState) => ({ edgeStates: { ...s.edgeStates, 'lp-arcReport': 'completed' as EdgeState }, nodeStates: { ...s.nodeStates, arcReport: 'active' as NodeState } }) },
-    // Report returns data (RoundTripEdge — response path)
+    // Report returns data (RoundTripEdge - response path)
     { delay: 600, apply: (s: FlowState) => ({ nodeStates: { ...s.nodeStates, arcReport: 'completed' as NodeState }, edgeStates: { ...s.edgeStates, 'arcReport-lp-return': 'active' as EdgeState } }) },
     { delay: 500, apply: (s: FlowState) => ({ edgeStates: { ...s.edgeStates, 'arcReport-lp-return': 'completed' as EdgeState } }) },
 
@@ -136,7 +136,7 @@ function buildAuditSequence(): StageSequence {
     { delay: 500, apply: (s: FlowState) => ({ edgeStates: { ...s.edgeStates, 'ipfs-verify': 'completed' as EdgeState }, nodeStates: { ...s.nodeStates, verifyAuditHash: 'active' as NodeState } }) },
     { delay: 800, apply: (s: FlowState) => ({ nodeStates: { ...s.nodeStates, verifyAuditHash: 'completed' as NodeState } }) },
 
-    // All verified — results flow to trust table
+    // All verified - results flow to trust table
     { delay: 400, apply: (s: FlowState) => ({ edgeStates: { ...s.edgeStates, 'verifyWfId-trust': 'active' as EdgeState, 'verifyHash-trust': 'active' as EdgeState } }) },
     { delay: 500, sidePanel: sidePanels.selfBinding, apply: (s: FlowState) => ({ edgeStates: { ...s.edgeStates, 'verifyWfId-trust': 'completed' as EdgeState, 'verifyHash-trust': 'completed' as EdgeState }, nodeStates: { ...s.nodeStates, lpBackend: 'completed' as NodeState, trustTable: 'active' as NodeState } }) },
     { delay: 1500, apply: (s: FlowState) => ({ nodeStates: { ...s.nodeStates, trustTable: 'completed' as NodeState } }) },
@@ -164,7 +164,7 @@ export default function AuditDrillDown() {
 
   const nodes: Node[] = useMemo(() => [
     // ═══════════════════════════════════════════════════
-    // LEFT: Workflow C — KYC/AML Data Access
+    // LEFT: Workflow C - KYC/AML Data Access
     // ═══════════════════════════════════════════════════
 
     // TEE enclave container
@@ -211,7 +211,7 @@ export default function AuditDrillDown() {
     // Full verification flow with data flowing between systems
     // ═══════════════════════════════════════════════════
 
-    // LP/Integrator Backend (top center — drives all verification)
+    // LP/Integrator Backend (top center - drives all verification)
     { id: 'lpBackend', type: 'actorNode', position: { x: 680, y: 10 },
       data: { label: 'LP Backend', role: 'lp', state: nodeStates.lpBackend || 'idle' },
       draggable: false, selectable: false },
@@ -262,8 +262,8 @@ export default function AuditDrillDown() {
         rows: [
           ['Centralized backend', 'One server', 'No', 'No'],
           ['Backend + SOC2', 'Operator + auditor', 'Annually', 'No'],
-          ['Open Compliance Layer', '≥2/3 of 21 nodes', 'Per trade', 'Yes — code public, ID pinned'],
-          ['+ DECO (future)', 'Math (ZK)', 'Cryptographic', 'Yes — zero trust'],
+          ['Open Compliance Layer', '≥2/3 of 21 nodes', 'Per trade', 'Yes - code public, ID pinned'],
+          ['+ DECO (future)', 'Math (ZK)', 'Cryptographic', 'Yes - zero trust'],
         ],
         highlightRow: 2,
         state: nodeStates.trustTable || 'idle',
@@ -274,19 +274,19 @@ export default function AuditDrillDown() {
 
   const edges: Edge[] = useMemo(() => [
     // ═══ LEFT: Workflow C ═══
-    // Integrator ↔ wfC (RoundTripEdge — request + encrypted response)
+    // Integrator ↔ wfC (RoundTripEdge - request + encrypted response)
     { id: 'integrator-wfC', source: 'integrator', target: 'wfC', type: 'roundTripEdge',
       data: { requestState: edgeStates['integrator-wfC'] || 'idle', responseState: edgeStates['wfC-integrator-return'] || 'idle',
         requestLabel: 'signed HTTP', responseLabel: 'encrypted KYC data' } },
     { id: 'wfC-registry', source: 'wfC', sourceHandle: 'bottom', target: 'registryCheck', targetHandle: 'top', type: 'dataFlowEdge', data: { state: edgeStates['wfC-registry'] || 'idle', label: 'getIntegrator(wallet)' } },
     { id: 'wfC-credentialReg', source: 'wfC', sourceHandle: 'bottom', target: 'credentialCheck', targetHandle: 'top', type: 'dataFlowEdge', data: { state: edgeStates['wfC-credentialReg'] || 'idle', label: 'getCredential(ccid)' } },
-    // wfC ↔ Sumsub (RoundTripEdge — confidential request + KYC data response)
+    // wfC ↔ Sumsub (RoundTripEdge - confidential request + KYC data response)
     { id: 'wfC-sumsub', source: 'wfC', target: 'sumsubFetch', type: 'roundTripEdge',
       data: { requestState: edgeStates['wfC-sumsub'] || 'idle', responseState: edgeStates['sumsub-wfC-return'] || 'idle',
         requestLabel: 'Confidential HTTP (TEE)', responseLabel: 'KYC/AML data', variant: 'confidential' } },
 
-    // ═══ RIGHT: Reconciliation — clean top-to-bottom flows ═══
-    // LP ↔ Arc report (RoundTripEdge — parallel request/response lines)
+    // ═══ RIGHT: Reconciliation - clean top-to-bottom flows ═══
+    // LP ↔ Arc report (RoundTripEdge - parallel request/response lines)
     { id: 'lp-arcReport', source: 'lpBackend', sourceHandle: 'bottom', target: 'arcReport', targetHandle: 'top', type: 'roundTripEdge',
       data: { requestState: edgeStates['lp-arcReport'] || 'idle', responseState: edgeStates['arcReport-lp-return'] || 'idle',
         requestLabel: 'getReport()', responseLabel: 'workflowId + auditHash + ipfsCid' } },

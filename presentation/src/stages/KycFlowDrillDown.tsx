@@ -14,13 +14,13 @@ import type { StageSequence, FlowState, NodeState, EdgeState, SidePanelData } fr
 
 const sidePanels: Record<string, SidePanelData> = {
   token: {
-    stage: 'KYC Flow', beat: 'Step 1 — Token Generation', title: 'Workflow D — Create Applicant',
+    stage: 'KYC Flow', beat: 'Step 1 - Token Generation', title: 'Workflow D - Create Applicant',
     json: {
       'User action': 'Clicks "Get Verified" in frontend (@ocn/react)',
       'Frontend calls': 'POST /api/kyc/token on Backend SDK (@ocn/node-sdk)',
       'Backend SDK triggers': 'CRE Workflow D (HTTP trigger)',
       'Inside CRE': [
-        'Read IntegratorRegistry — verify integrator is active',
+        'Read IntegratorRegistry - verify integrator is active',
         'Create Sumsub applicant with namespaced externalUserId',
         'externalUserId = {workspaceId}:{brokerAppId}:{walletAddress}',
         'Confidential HTTP (TEE) → Sumsub: create applicant + generate access token',
@@ -31,7 +31,7 @@ const sidePanels: Record<string, SidePanelData> = {
     highlightFields: ['Inside CRE', 'Result'],
   },
   verification: {
-    stage: 'KYC Flow', beat: 'Step 2 — Identity Verification', title: 'Workflow A — Verify + Credential',
+    stage: 'KYC Flow', beat: 'Step 2 - Identity Verification', title: 'Workflow A - Verify + Credential',
     json: {
       'User action': 'Completes KYC in Sumsub iframe (documents, selfie)',
       'Sumsub SDK fires': 'onApplicantSubmitted → frontend calls POST /api/kyc/verify',
@@ -54,7 +54,7 @@ const sidePanels: Record<string, SidePanelData> = {
       'Consumer calls': ['IdentityRegistry.registerIdentity(ccid, wallet)', 'CredentialRegistry.registerCredential(ccid, KYC_VERIFIED, ...)'],
       'Credential data': { kycLevel: 2, riskScore: 1, jurisdiction: 'DE', brokerAppId: '0xbroker_xyz...', workspaceId: '0xproto_abc...' },
       'Frontend polls': 'isVerified(wallet) on-chain → verified!',
-      'Now any protocol': 'require(consumer.isVerified(wallet)) — 1 line',
+      'Now any protocol': 'require(consumer.isVerified(wallet)) - 1 line',
     },
     highlightFields: ['Consumer calls', 'Frontend polls', 'Now any protocol'],
   },
@@ -79,7 +79,7 @@ function buildKycSequence(): StageSequence {
     { delay: 400, apply: (s: FlowState) => ({ edgeStates: { ...s.edgeStates, 'wfD-integratorReg': 'active' as EdgeState } }) },
     { delay: 400, apply: (s: FlowState) => ({ edgeStates: { ...s.edgeStates, 'wfD-integratorReg': 'completed' as EdgeState }, nodeStates: { ...s.nodeStates, integratorReg: 'active' as NodeState } }) },
     { delay: 400, apply: (s: FlowState) => ({ nodeStates: { ...s.nodeStates, integratorReg: 'completed' as NodeState } }) },
-    // Workflow D ↔ Sumsub (RoundTrip — create applicant + get token)
+    // Workflow D ↔ Sumsub (RoundTrip - create applicant + get token)
     { delay: 300, apply: (s: FlowState) => ({ edgeStates: { ...s.edgeStates, 'wfD-sumsub': 'active' as EdgeState } }) },
     { delay: 500, apply: (s: FlowState) => ({ edgeStates: { ...s.edgeStates, 'wfD-sumsub': 'completed' as EdgeState }, nodeStates: { ...s.nodeStates, sumsub: 'active' as NodeState } }) },
     { delay: 600, apply: (s: FlowState) => ({ nodeStates: { ...s.nodeStates, sumsub: 'completed' as NodeState }, edgeStates: { ...s.edgeStates, 'sumsub-wfD-return': 'active' as EdgeState } }) },

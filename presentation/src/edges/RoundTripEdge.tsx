@@ -52,7 +52,7 @@ export default function RoundTripEdge({
   return (
     <>
       <g>
-        {/* Request path (top) — forward dot */}
+        {/* Request path (top) - forward dot */}
         <path
           d={requestPath}
           stroke={reqStroke}
@@ -72,7 +72,7 @@ export default function RoundTripEdge({
           />
         )}
 
-        {/* Response path (bottom) — green, reverse dot */}
+        {/* Response path (bottom) - green, reverse dot */}
         <path
           d={responsePath}
           stroke={resStroke}
