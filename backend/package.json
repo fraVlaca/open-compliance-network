@@ -1,0 +1,13 @@
+{
+  "name": "@ocn/node-sdk",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "bun run --watch src/server.ts",
+    "start": "bun run src/server.ts"
+  },
+  "dependencies": {
+    "hono": "^4.0.0",
+    "viem": "^2.21.0"
+  }
+}
