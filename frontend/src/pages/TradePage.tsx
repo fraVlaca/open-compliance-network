@@ -12,7 +12,14 @@ import {
   Shield,
 } from "lucide-react";
 import { CONTRACTS, ESCROW_SWAP_ABI, ERC20_ABI } from "../config/contracts";
+
+const TOKEN_IN = CONTRACTS.usdc;
+const TOKEN_OUT = CONTRACTS.eurc;
+const TOKEN_IN_SYMBOL = "USDC";
+const TOKEN_OUT_SYMBOL = "EURC";
 import { useIsVerified } from "../hooks/useComplianceStatus";
+import { useKYCFlow } from "../hooks/useKYCFlow";
+import SumsubVerification from "../components/SumsubVerification";
 import ProtocolMetrics from "../components/ProtocolMetrics";
 
 const BACKEND_URL = (import.meta as any).env?.VITE_BACKEND_URL || "http://localhost:3001";
@@ -29,16 +36,36 @@ type TradeStep = { label: string; status: "pending" | "active" | "done" | "error
 export default function TradePage() {
   const { address } = useAccount();
   const client = usePublicClient();
-  const { data: isVerified, isLoading: verifyLoading } = useIsVerified(address);
+  const { data: isVerified, isLoading: verifyLoading, refetch: refetchVerified } = useIsVerified(address);
+  const {
+    step: kycStep, sumsubToken, errorMsg: kycError,
+    startKYC, onSumsubComplete, reset: resetKYC,
+  } = useKYCFlow(address);
+
+  // Refetch verification status when KYC completes
+  useEffect(() => {
+    if (kycStep === "done") refetchVerified();
+  }, [kycStep, refetchVerified]);
+
+  // Also poll for verification status periodically when not verified
+  useEffect(() => {
+    if (isVerified || verifyLoading) return;
+    const interval = setInterval(() => refetchVerified(), 5000);
+    return () => clearInterval(interval);
+  }, [isVerified, verifyLoading, refetchVerified]);
   const [amount, setAmount] = useState("1");
   const [orders, setOrders] = useState<OrderEvent[]>([]);
   const [steps, setSteps] = useState<TradeStep[]>([]);
   const [fillSteps, setFillSteps] = useState<TradeStep[]>([]);
   const [fillingOrderId, setFillingOrderId] = useState<string | null>(null);
 
-  // Approval
+  // Approval (USDC for maker)
   const { writeContract: approve, data: approveTx } = useWriteContract();
   const { isLoading: approving, isSuccess: approveSuccess } = useWaitForTransactionReceipt({ hash: approveTx });
+
+  // Approval (EURC for taker/filler)
+  const { writeContract: approveEurc, data: approveEurcTx } = useWriteContract();
+  const { isLoading: approvingEurc, isSuccess: approveEurcSuccess } = useWaitForTransactionReceipt({ hash: approveEurcTx });
 
   // Create order
   const { writeContract: createOrder, data: createTx } = useWriteContract();
@@ -48,18 +75,27 @@ export default function TradePage() {
   const { writeContract: fillOrder, data: fillTx } = useWriteContract();
   const { isLoading: filling, isSuccess: fillSuccess } = useWaitForTransactionReceipt({ hash: fillTx });
 
-  // USDC balance + allowance
+  // Token balances + allowance
   const { data: balance, refetch: refetchBalance } = useReadContract({
-    address: CONTRACTS.usdc, abi: ERC20_ABI, functionName: "balanceOf",
+    address: TOKEN_IN, abi: ERC20_ABI, functionName: "balanceOf",
+    args: address ? [address] : undefined, query: { enabled: !!address },
+  });
+  const { data: eurcBalance } = useReadContract({
+    address: TOKEN_OUT, abi: ERC20_ABI, functionName: "balanceOf",
     args: address ? [address] : undefined, query: { enabled: !!address },
   });
   const { data: allowance, refetch: refetchAllowance } = useReadContract({
-    address: CONTRACTS.usdc, abi: ERC20_ABI, functionName: "allowance",
+    address: TOKEN_IN, abi: ERC20_ABI, functionName: "allowance",
+    args: address ? [address, CONTRACTS.escrowSwap] : undefined, query: { enabled: !!address },
+  });
+  const { data: eurcAllowance, refetch: refetchEurcAllowance } = useReadContract({
+    address: TOKEN_OUT, abi: ERC20_ABI, functionName: "allowance",
     args: address ? [address, CONTRACTS.escrowSwap] : undefined, query: { enabled: !!address },
   });
 
   const amountWei = parseUnits(amount || "0", 6);
   const hasAllowance = typeof allowance === "bigint" && allowance >= amountWei && amountWei > 0n;
+  const hasEurcAllowance = typeof eurcAllowance === "bigint" && eurcAllowance > 0n;
 
   // Fetch recent orders
   useEffect(() => {
@@ -82,8 +118,8 @@ export default function TradePage() {
   }, [client, createSuccess, fillSuccess]);
 
   useEffect(() => {
-    if (createSuccess || fillSuccess || approveSuccess) { refetchBalance(); refetchAllowance(); }
-  }, [createSuccess, fillSuccess, approveSuccess, refetchBalance, refetchAllowance]);
+    if (createSuccess || fillSuccess || approveSuccess || approveEurcSuccess) { refetchBalance(); refetchAllowance(); refetchEurcAllowance(); }
+  }, [createSuccess, fillSuccess, approveSuccess, approveEurcSuccess, refetchBalance, refetchAllowance, refetchEurcAllowance]);
 
   // --- Create Order flow with step tracking ---
   useEffect(() => {
@@ -108,55 +144,45 @@ export default function TradePage() {
     if (fillSuccess && fillTx && fillingOrderId) {
       // fillOrderAsync succeeded → now trigger CRE Workflow B via backend
       setFillSteps([
-        { label: "Taker USDC deposited into escrow", status: "done", detail: fillTx },
+        { label: "Taker EURC deposited into escrow", status: "done", detail: fillTx },
         { label: "ComplianceCheckRequested event emitted", status: "done" },
         { label: "CRE Workflow B: per-trade compliance check...", status: "active" },
         { label: "Trade settlement", status: "pending" },
       ]);
 
-      // Trigger CRE Workflow B via backend
-      // Try event indices 0-3 (fillOrderAsync emits Transfer events before ComplianceCheckRequested)
+      // Trigger CRE Workflow B via backend (backend auto-finds the right event index)
       (async () => {
-        let data: any = null;
-        let lastError = "";
+        try {
+          const resp = await fetch(`${BACKEND_URL}/api/compliance/check`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ txHash: fillTx }),
+          });
+          const data = await resp.json();
 
-        for (const eventIndex of [0, 1, 2, 3]) {
-          try {
-            const resp = await fetch(`${BACKEND_URL}/api/compliance/check`, {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ txHash: fillTx, eventIndex }),
-            });
-            const result = await resp.json();
-            // Check if we got a real CRE result (has tradeId or approved field)
-            if (result.tradeId || result.approved !== undefined) {
-              data = result;
-              break;
-            }
-            lastError = result.error || result.details || "Unknown error";
-          } catch (err: any) {
-            lastError = err.message;
+          if (data.tradeId || data.approved !== undefined) {
+            const approved = data.approved === true;
+            setFillSteps([
+              { label: "Taker EURC deposited into escrow", status: "done", detail: fillTx },
+              { label: "ComplianceCheckRequested event emitted", status: "done" },
+              { label: `CRE Workflow B: ${approved ? "APPROVED" : "REJECTED"} — risk score: ${data.riskScore ?? 0}`, status: "done" },
+              { label: approved
+                  ? "Trade settled via onComplianceApproved() auto-callback"
+                  : `Rejected: ${(data.flags || []).join(", ") || "KYC not approved"}`,
+                status: approved ? "done" : "error" },
+            ]);
+          } else {
+            setFillSteps([
+              { label: "Taker EURC deposited into escrow", status: "done", detail: fillTx },
+              { label: "ComplianceCheckRequested event emitted", status: "done" },
+              { label: `CRE Workflow B: ${data.error || "failed"}`, status: "error" },
+              { label: "Trade pending", status: "error" },
+            ]);
           }
-        }
-
-        if (data) {
-          const approved = data.approved === true;
-          setFillSteps([
-            { label: "Taker USDC deposited into escrow", status: "done", detail: fillTx },
-            { label: "ComplianceCheckRequested event emitted", status: "done" },
-            { label: `CRE Workflow B: ${approved ? "APPROVED" : "REJECTED"} — risk score: ${data.riskScore ?? 0}`, status: "done" },
-            { label: approved
-                ? "Trade settled via onComplianceApproved() auto-callback"
-                : `Rejected: ${(data.flags || []).join(", ") || "KYC not approved"}`,
-              status: approved ? "done" : "error" },
-          ]);
-        } else {
-          setFillSteps([
-            { label: "Taker USDC deposited into escrow", status: "done", detail: fillTx },
-            { label: "ComplianceCheckRequested event emitted", status: "done" },
-            { label: `CRE Workflow B: ${lastError.slice(0, 80)}`, status: "error" },
-            { label: "Trade pending — CRE could not process event", status: "error" },
-          ]);
+        } catch (err: any) {
+          setFillSteps(prev => prev.map((s, i) =>
+            i === 2 ? { ...s, label: `CRE error: ${err.message?.slice(0, 60)}`, status: "error" as const } : s
+          ));
         }
       })();
     }
@@ -164,7 +190,14 @@ export default function TradePage() {
 
   const handleApprove = () => {
     approve({
-      address: CONTRACTS.usdc, abi: ERC20_ABI, functionName: "approve",
+      address: TOKEN_IN, abi: ERC20_ABI, functionName: "approve",
+      args: [CONTRACTS.escrowSwap, BigInt("0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff")],
+    });
+  };
+
+  const handleApproveEurc = () => {
+    approveEurc({
+      address: TOKEN_OUT, abi: ERC20_ABI, functionName: "approve",
       args: [CONTRACTS.escrowSwap, BigInt("0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff")],
     });
   };
@@ -175,8 +208,10 @@ export default function TradePage() {
       address: CONTRACTS.escrowSwap, abi: ESCROW_SWAP_ABI, functionName: "createOrder",
       args: [
         "0x0000000000000000000000000000000000000000" as Address,
-        CONTRACTS.usdc, CONTRACTS.usdc,
-        parseUnits(amount || "0", 6), parseUnits(amount || "0", 6),
+        TOKEN_IN,   // selling USDC
+        TOKEN_OUT,  // buying EURC
+        parseUnits(amount || "0", 6),  // amount USDC to sell
+        parseUnits(amount || "0", 6),  // amount EURC to receive (1:1 for demo)
       ],
     });
   };
@@ -184,7 +219,7 @@ export default function TradePage() {
   const handleFillAsync = (orderId: string) => {
     setFillingOrderId(orderId);
     setFillSteps([
-      { label: "Depositing taker USDC + emitting ComplianceCheckRequested", status: "active" },
+      { label: "Depositing taker EURC + emitting ComplianceCheckRequested", status: "active" },
       { label: "ComplianceCheckRequested event", status: "pending" },
       { label: "CRE Workflow B: per-trade compliance check", status: "pending" },
       { label: "Trade settlement", status: "pending" },
@@ -224,7 +259,7 @@ export default function TradePage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-xl font-bold tracking-tight">Trade</h1>
-          <p className="text-gray-400 text-xs mt-0.5">USDC escrow swap with on-chain compliance gating</p>
+          <p className="text-gray-400 text-xs mt-0.5">USDC → EURC escrow swap with on-chain compliance gating</p>
         </div>
         {verifyLoading ? <span className="badge-pending">Checking...</span> :
          isVerified ? <span className="badge-verified flex items-center gap-1"><ShieldCheck className="w-3 h-3" /> KYC Verified</span> :
@@ -233,15 +268,53 @@ export default function TradePage() {
 
       <ProtocolMetrics />
 
-      {!isVerified && !verifyLoading && (
-        <div className="card flex items-start gap-3 border-accent-red/30">
-          <AlertCircle className="w-5 h-5 text-accent-red flex-shrink-0 mt-0.5" />
-          <div>
-            <p className="text-sm font-medium text-accent-red">KYC Required</p>
-            <p className="text-xs text-gray-400 mt-1">
-              Go to <strong>Integrator</strong> page to verify. The contract calls <code className="text-accent-blue">require(isVerified(msg.sender))</code>.
-            </p>
+      {/* Inline KYC — verify directly from the trade page */}
+      {!isVerified && !verifyLoading && kycStep !== "done" && (
+        <div className="card space-y-4 border-accent-blue/30">
+          <div className="flex items-center gap-2">
+            <Shield className="w-5 h-5 text-accent-blue" />
+            <h3 className="font-semibold text-sm">Identity Verification Required</h3>
           </div>
+          <p className="text-xs text-gray-400">
+            The contract calls <code className="text-accent-blue">require(isVerified(msg.sender))</code>.
+            Verify your identity below to trade — CRE Workflow D generates a Sumsub token, then Workflow A issues your on-chain credential.
+          </p>
+
+          {kycStep === "idle" && (
+            <button onClick={() => startKYC()} className="btn-primary text-sm flex items-center gap-1.5 w-full">
+              <ShieldCheck className="w-3.5 h-3.5" /> Get Verified to Trade
+            </button>
+          )}
+
+          {kycStep === "loading-token" && (
+            <div className="flex items-center gap-2 p-3 rounded-lg bg-surface-700/30">
+              <Loader2 className="w-4 h-4 text-accent-blue animate-spin" />
+              <p className="text-xs text-accent-blue">CRE Workflow D: generating Sumsub access token...</p>
+            </div>
+          )}
+
+          {kycStep === "sumsub" && sumsubToken && (
+            <SumsubVerification
+              accessToken={sumsubToken}
+              onComplete={() => onSumsubComplete()}
+              onError={() => resetKYC()}
+            />
+          )}
+
+          {(kycStep === "verifying" || kycStep === "polling") && (
+            <div className="flex items-center gap-2 p-3 rounded-lg bg-surface-700/30">
+              <Loader2 className="w-4 h-4 text-accent-purple animate-spin" />
+              <p className="text-xs text-accent-purple">CRE Workflow A: verifying identity + writing credential on-chain...</p>
+            </div>
+          )}
+
+          {kycStep === "error" && (
+            <div className="flex items-center gap-2 p-3 rounded-lg bg-accent-red/10">
+              <AlertCircle className="w-4 h-4 text-accent-red" />
+              <p className="text-xs text-accent-red">{kycError}</p>
+              <button onClick={resetKYC} className="text-xs text-accent-blue underline ml-auto">Retry</button>
+            </div>
+          )}
         </div>
       )}
 
@@ -252,18 +325,18 @@ export default function TradePage() {
           Create Escrow Order
         </h2>
         <p className="text-xs text-gray-400">
-          Deposit USDC into escrow. Contract checks <code className="text-accent-green">isVerified(msg.sender)</code> — your on-chain KYC credential from CRE Workflow A.
+          Swap USDC for EURC. Contract checks <code className="text-accent-green">isVerified(msg.sender)</code> — your on-chain KYC credential from CRE Workflow A.
         </p>
 
         <div>
-          <label className="text-sm text-gray-400 block mb-1">Amount (USDC)</label>
+          <label className="text-sm text-gray-400 block mb-1">Amount (USDC → EURC at 1:1)</label>
           <input type="number" value={amount} onChange={(e) => setAmount(e.target.value)} className="input-base" placeholder="1" />
         </div>
 
         {!hasAllowance ? (
           <button onClick={handleApprove} disabled={approving} className="btn-primary text-sm flex items-center gap-1.5 disabled:opacity-50 w-full">
             {approving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CheckCircle2 className="w-3.5 h-3.5" />}
-            {approving ? "Approving USDC..." : "1. Approve USDC"}
+            {approving ? `Approving ${TOKEN_IN_SYMBOL}...` : `1. Approve ${TOKEN_IN_SYMBOL}`}
           </button>
         ) : (
           <button onClick={handleCreateOrder} disabled={!isVerified || creating} className="btn-primary text-sm flex items-center gap-1.5 disabled:opacity-50 w-full">
@@ -271,7 +344,7 @@ export default function TradePage() {
             {creating ? "Creating..." : "Create Order"}
           </button>
         )}
-        {hasAllowance && <p className="text-xs text-accent-green flex items-center gap-1"><CheckCircle2 className="w-3 h-3" /> USDC approved</p>}
+        {hasAllowance && <p className="text-xs text-accent-green flex items-center gap-1"><CheckCircle2 className="w-3 h-3" /> {TOKEN_IN_SYMBOL} approved for EscrowSwap</p>}
 
         {steps.length > 0 && <StepTracker steps={steps} />}
       </div>
@@ -302,11 +375,19 @@ export default function TradePage() {
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
-                  <span className="text-sm font-medium">{formatUnits(o.amountIn, 6)} USDC</span>
+                  <span className="text-sm font-medium">{formatUnits(o.amountIn, 6)} {TOKEN_IN_SYMBOL} → {TOKEN_OUT_SYMBOL}</span>
                   {o.filled ? (
                     <span className="badge-verified text-xs">Filled</span>
                   ) : fillingOrderId === o.orderId && (filling || fillSteps.length > 0) ? (
                     <span className="text-xs text-accent-blue flex items-center gap-1"><Loader2 className="w-3 h-3 animate-spin" /> Checking...</span>
+                  ) : !hasEurcAllowance ? (
+                    <button
+                      onClick={handleApproveEurc}
+                      disabled={approvingEurc}
+                      className="btn-secondary text-xs py-1 px-3 disabled:opacity-50"
+                    >
+                      {approvingEurc ? "Approving..." : "Approve EURC"}
+                    </button>
                   ) : (
                     <button
                       onClick={() => handleFillAsync(o.orderId)}

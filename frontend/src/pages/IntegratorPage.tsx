@@ -22,15 +22,22 @@ import {
 } from "../config/contracts";
 import { useIntegrator, ROLE_NAMES } from "../hooks/useComplianceStatus";
 import { useKYCFlow } from "../hooks/useKYCFlow";
+import { useComplianceLookup } from "../hooks/useComplianceLookup";
 import SumsubVerification from "../components/SumsubVerification";
+import DecryptButton from "../components/DecryptButton";
+import AuditTrail from "../components/AuditTrail";
 
 export default function IntegratorPage() {
   const { address } = useAccount();
   const { data: integrator, refetch } = useIntegrator(address);
   const [workspaceId, setWorkspaceId] = useState(DEMO_WORKSPACE_ID);
-  const [lookupAddress, setLookupAddress] = useState("");
-  const [lookupPhase, setLookupPhase] = useState<"idle" | "chain" | "cre" | "done">("idle");
-  const [lookupResult, setLookupResult] = useState<any>(null);
+  const {
+    lookupAddress,
+    setLookupAddress,
+    lookupPhase,
+    lookupResult,
+    handleLookup,
+  } = useComplianceLookup();
   const [verifyTarget, setVerifyTarget] = useState("");
 
   const { writeContract, data: tx } = useWriteContract();
@@ -61,31 +68,6 @@ export default function IntegratorPage() {
       functionName: "joinWorkspace",
       args: [workspaceId as `0x${string}`, 1],
     });
-  };
-
-  const BACKEND_URL = (import.meta as any).env?.VITE_BACKEND_URL || "http://localhost:3001";
-
-  const handleLookup = async () => {
-    if (!lookupAddress) return;
-    setLookupResult(null);
-
-    // Phase 1: Quick on-chain check (~1s)
-    setLookupPhase("chain");
-    try {
-      const statusResp = await fetch(`${BACKEND_URL}/api/kyc/status/${lookupAddress}`);
-      const statusData = await statusResp.json();
-      setLookupResult(statusData);
-
-      // Phase 2: CRE Workflow C — full compliance audit (~30s)
-      setLookupPhase("cre");
-      const auditResp = await fetch(`${BACKEND_URL}/api/audit/${lookupAddress}?reason=compliance+lookup`);
-      const auditData = await auditResp.json();
-      setLookupResult((prev: any) => ({ ...prev, audit: auditData }));
-      setLookupPhase("done");
-    } catch (err: any) {
-      setLookupResult((prev: any) => ({ ...prev, wallet: lookupAddress, error: err.message }));
-      setLookupPhase("done");
-    }
   };
 
   const handleStartKYC = () => {
@@ -243,7 +225,7 @@ export default function IntegratorPage() {
               <input
                 type="text"
                 value={lookupAddress}
-                onChange={(e) => { setLookupAddress(e.target.value); setLookupResult(null); setLookupPhase("idle"); }}
+                onChange={(e) => setLookupAddress(e.target.value)}
                 className="input-base flex-1 font-mono text-sm"
                 placeholder="0x... wallet address"
               />
@@ -310,6 +292,7 @@ export default function IntegratorPage() {
                           <span className="text-gray-500">Encrypted PII:</span>{" "}
                           <code className="text-accent-purple text-[10px] break-all">{lookupResult.audit.encryptedIdentity.slice(0, 40)}...</code>
                           <p className="text-gray-500 mt-1">{lookupResult.audit.encryptionNote}</p>
+                          <DecryptButton encryptedHex={lookupResult.audit.encryptedIdentity} />
                         </div>
                       )}
                       {lookupResult.audit.identity && (
@@ -334,28 +317,8 @@ export default function IntegratorPage() {
             )}
           </div>
 
-          {/* Audit Trail */}
-          <div className="card space-y-4">
-            <h2 className="font-semibold flex items-center gap-2">
-              <FileCheck className="w-5 h-5 text-accent-amber" />
-              Audit Trail
-            </h2>
-            <p className="text-sm text-gray-400">
-              Per-trade audit records are on IPFS. KYC/AML data accessed via CRE Workflow C (Confidential HTTP in TEE, scoped by appId).
-            </p>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="p-4 rounded-lg bg-surface-700/50">
-                <div className="text-xs text-gray-400 mb-1">KYC/AML Data (PII)</div>
-                <div className="text-sm">Via CRE Workflow C</div>
-                <div className="text-xs text-gray-500 mt-1">Confidential HTTP in TEE</div>
-              </div>
-              <div className="p-4 rounded-lg bg-surface-700/50">
-                <div className="text-xs text-gray-400 mb-1">Trade Audit (non-PII)</div>
-                <div className="text-sm">Direct IPFS fetch</div>
-                <div className="text-xs text-gray-500 mt-1">Public, hash-verified</div>
-              </div>
-            </div>
-          </div>
+          {/* Audit Trail — real on-chain data */}
+          <AuditTrail />
         </>
       ) : (
         <div className="card space-y-6 max-w-lg">

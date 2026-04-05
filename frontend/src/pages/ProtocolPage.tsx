@@ -1,14 +1,17 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { useAccount, useWriteContract, useWaitForTransactionReceipt, useReadContract } from "wagmi";
 import { Building2, Copy, ExternalLink, Check, Loader2, Code2, BookOpen, Plus, ChevronRight } from "lucide-react";
 import { CONTRACTS, INTEGRATOR_REGISTRY_ABI, DEMO_WORKSPACE_ID } from "../config/contracts";
 import { useIntegrator, ROLE_NAMES } from "../hooks/useComplianceStatus";
+import AuditTrail from "../components/AuditTrail";
 
 export default function ProtocolPage() {
   const { address } = useAccount();
   const { data: integrator, refetch } = useIntegrator(address);
   const [name, setName] = useState("");
   const [showCreate, setShowCreate] = useState(false);
+  const navigate = useNavigate();
   const [copied, setCopied] = useState<string | null>(null);
 
   const { writeContract, data: tx } = useWriteContract();
@@ -74,7 +77,7 @@ export default function ProtocolPage() {
         {/* Demo workspace card */}
         {wsName && (
           <div className="card hover:border-accent-blue/50 transition-colors cursor-pointer"
-            onClick={() => {/* Could navigate to workspace detail */}}
+            onClick={() => navigate(`/app/protocol/${DEMO_WORKSPACE_ID}`)}
           >
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-4">
@@ -224,6 +227,9 @@ export default function ProtocolPage() {
           </div>
         </div>
       </div>
+
+      {/* Audit Trail — on-chain compliance reports */}
+      <AuditTrail />
     </div>
   );
 }
