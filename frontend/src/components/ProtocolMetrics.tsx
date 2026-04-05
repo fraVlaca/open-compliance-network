@@ -15,21 +15,25 @@ export default function ProtocolMetrics() {
 
     async function fetchMetrics() {
       try {
+        // Arc Testnet limits eth_getLogs to 10,000 blocks
+        const latest = await client!.getBlockNumber();
+        const fromBlock = latest > 9000n ? latest - 9000n : 0n;
+
         const [credLogs, tradeLogs, intLogs] = await Promise.all([
           client!.getLogs({
             address: CONTRACTS.credentialConsumer,
             event: parseAbiItem("event CredentialIssued(address indexed wallet, bytes32 indexed ccid, bytes32 credentialTypeId, uint40 expiresAt)"),
-            fromBlock: 0n,
+            fromBlock,
           }),
           client!.getLogs({
             address: CONTRACTS.reportConsumer,
             event: parseAbiItem("event ComplianceCheckCompleted(bytes32 indexed tradeId, address indexed trader, bool approved, uint8 riskScore, bytes32 auditHash)"),
-            fromBlock: 0n,
+            fromBlock,
           }),
           client!.getLogs({
             address: CONTRACTS.integratorRegistry,
             event: parseAbiItem("event IntegratorJoined(bytes32 indexed workspaceAppId, bytes32 indexed integratorAppId, address indexed wallet, uint8 role)"),
-            fromBlock: 0n,
+            fromBlock,
           }),
         ]);
         setCredentials(credLogs.length);
