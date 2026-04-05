@@ -14,23 +14,23 @@ import {ComplianceReportConsumer} from "../src/consumers/ComplianceReportConsume
 import {IntegratorRegistry} from "../src/registries/IntegratorRegistry.sol";
 import {EscrowSwap} from "../src/demo/EscrowSwap.sol";
 
-/// @title Deploy — Deploys the full compliance engine stack to Arc Testnet
+/// @title Deploy - Deploys the full compliance engine stack to Arc Testnet
 /// @dev Run: forge script script/Deploy.s.sol --rpc-url https://rpc.testnet.arc.network --broadcast
 contract Deploy is Script {
   // -----------------------------------------------------------------------
-  // Configuration — update these before deploying
+  // Configuration - update these before deploying
   // -----------------------------------------------------------------------
 
   // KeystoneForwarder on Arc Testnet (from Chainlink CRE Forwarder Directory)
   address constant KEYSTONE_FORWARDER = 0x6E9EE680ef59ef64Aa8C7371279c27E496b5eDc1;
 
-  // CRE workflow identity — set after deploying workflows via `cre workflow deploy`
+  // CRE workflow identity - set after deploying workflows via `cre workflow deploy`
   // Initial deploy uses bytes32(0) to skip validation; update via setConfig() after workflow deploy
   bytes32 constant IDENTITY_WORKFLOW_ID = bytes32(0);
   bytes32 constant PERTRADE_WORKFLOW_ID = bytes32(0);
   address constant WORKFLOW_OWNER = address(0); // set to your CRE deployer wallet after workflow deploy
 
-  // USDC on Arc Testnet — native stablecoin (also used for gas)
+  // USDC on Arc Testnet - native stablecoin (also used for gas)
   // Note: native USDC uses 18 decimals for gas, but ERC-20 interface uses 6 decimals
   address constant USDC = 0x3600000000000000000000000000000000000000;
 

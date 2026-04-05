@@ -204,7 +204,7 @@ contract EscrowSwapTest is Test {
     vm.prank(maker);
     bytes32 orderId = escrow.createOrder(address(0), address(usdc), address(eurc), 100e6, 90e6);
 
-    // Taker fills async (no KYC check yet — CRE will check)
+    // Taker fills async (no KYC check yet - CRE will check)
     vm.prank(taker);
     escrow.fillOrderAsync(orderId);
 
@@ -324,7 +324,7 @@ contract EscrowSwapTest is Test {
   }
 }
 
-/// @dev Mock contract that always reverts on callback — used to test try-catch in ComplianceReportConsumer
+/// @dev Mock contract that always reverts on callback - used to test try-catch in ComplianceReportConsumer
 contract RevertingCallback is IComplianceCallback {
   function onComplianceApproved(bytes32) external pure override {
     revert("intentional revert");
