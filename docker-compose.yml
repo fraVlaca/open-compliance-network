@@ -1,0 +1,23 @@
+services:
+  backend:
+    build: ./backend
+    ports:
+      - "3001:3001"
+    env_file: ./backend/.env
+    volumes:
+      # Mount workflows + CRE config for simulation
+      - ./workflows:/app/workflows:ro
+      - ./secrets.yaml:/app/secrets.yaml:ro
+      - ./project.yaml:/app/project.yaml:ro
+      # Mount CRE CLI from host (installed at ~/.cre)
+      - ~/.cre:/root/.cre:ro
+    working_dir: /app
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "5173:5173"
+    environment:
+      - VITE_BACKEND_URL=http://localhost:3001
+    depends_on:
+      - backend
