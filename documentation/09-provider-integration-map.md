@@ -1,4 +1,4 @@
-# 09 — Provider Integration Map
+# 09 - Provider Integration Map
 
 ## Overview
 
@@ -47,21 +47,21 @@ The compliance engine orchestrates multiple specialized providers, each covering
 | Document verification | OCR + face match | Via SDK (user-facing, not per-trade) |
 
 ### Credentials (in TEE)
-- `SUMSUB_APP_TOKEN` — authenticates API calls
-- `SUMSUB_SECRET_KEY` — signs API requests
-- `SUMSUB_WEBHOOK_SECRET` — verifies webhook signatures (if used)
+- `SUMSUB_APP_TOKEN` - authenticates API calls
+- `SUMSUB_SECRET_KEY` - signs API requests
+- `SUMSUB_WEBHOOK_SECRET` - verifies webhook signatures (if used)
 
 ### Fragmentation Analysis
 
 **What Sumsub already shares:**
-- Reusable KYC Networks — identity verification data can be shared across Sumsub clients in the network
+- Reusable KYC Networks - identity verification data can be shared across Sumsub clients in the network
 - User only needs to verify once; partner platforms get the result with a liveness check
 - Source keys can group applicants, but cannot be created programmatically (dashboard only)
 
 **What Sumsub does NOT share:**
-- Sanctions screening results — each party re-screens even within the same Sumsub network
-- PEP screening results — re-screened per party
-- AML monitoring alerts — per-account
+- Sanctions screening results - each party re-screens even within the same Sumsub network
+- PEP screening results - re-screened per party
+- AML monitoring alerts - per-account
 
 **What the engine adds:**
 - Sanctions + PEP results captured once at trade time, shared to all parties
@@ -81,10 +81,10 @@ Example: "proto_abc:broker_xyz:0xUserWallet"
 - All applicants live under one Sumsub account
 - CRE workflows create applicants with namespaced externalUserId
 - CRE Workflow C (identity audit) enforces scoping: checks on-chain registry to verify the requester's role and appId, then fetches only matching applicants from Sumsub
-- Sumsub itself sees a flat list — scoping is in on-chain data + CRE workflow logic
+- Sumsub itself sees a flat list - scoping is in on-chain data + CRE workflow logic
 
 **Why not Sumsub source keys or sub-accounts?**
-Sumsub offers source keys for applicant grouping and scoped app tokens, but source keys can only be created via the dashboard (no API). This requires manual intervention per new protocol — incompatible with trustless, programmatic onboarding. A single master account with externalUserId namespacing is fully automated.
+Sumsub offers source keys for applicant grouping and scoped app tokens, but source keys can only be created via the dashboard (no API). This requires manual intervention per new protocol - incompatible with trustless, programmatic onboarding. A single master account with externalUserId namespacing is fully automated.
 
 **Integrator data access:**
 Integrators access their scoped KYC/AML data through CRE Workflow C (identity audit). They sign an HTTP request with their wallet. CRE reads the on-chain IntegratorRegistry to determine their role and appId, queries Sumsub for matching applicants (filtered by externalUserId prefix), and returns data encrypted to the integrator's key. Integrators never access Sumsub directly.
@@ -103,7 +103,7 @@ Integrators access their scoped KYC/AML data through CRE Workflow C (identity au
 | Ongoing monitoring | Alerts API | `GET /api/kyt/v2/alerts` |
 
 ### Credentials (in TEE)
-- `CHAINALYSIS_API_KEY` — single API key for all calls
+- `CHAINALYSIS_API_KEY` - single API key for all calls
 
 ### Fragmentation Analysis
 
@@ -124,12 +124,12 @@ Integrators access their scoped KYC/AML data through CRE Workflow C (identity au
 - ONE screening per wallet per trade (not N screenings)
 - Results are shared via the unified audit trail
 - All parties see the same risk score and exposure analysis
-- Consistency guaranteed — no divergent results from different screening times
+- Consistency guaranteed - no divergent results from different screening times
 
 **This is where the engine adds the most tangible value.** Chainalysis's zero-sharing model means the engine eliminates the most expensive source of redundancy.
 
 ### Integration Notes
-- Chainalysis API has sub-100ms latency for risk scoring — suitable for real-time per-trade checks
+- Chainalysis API has sub-100ms latency for risk scoring - suitable for real-time per-trade checks
 - Each wallet screening returns a risk score, exposure categories, and alert status
 - Counterparty screening uses the same API but with the counterparty's address
 - Results are captured point-in-time and stored in the audit record
@@ -147,13 +147,13 @@ Integrators access their scoped KYC/AML data through CRE Workflow C (identity au
 | Compliance check | Transfer analysis | Verify Travel Rule requirements are met |
 
 ### Credentials (in TEE)
-- `NOTABENE_API_KEY` — API access
-- `NOTABENE_VASP_DID` — the engine's VASP decentralized identifier
+- `NOTABENE_API_KEY` - API access
+- `NOTABENE_VASP_DID` - the engine's VASP decentralized identifier
 
 ### Fragmentation Analysis
 
 **What Notabene shares:**
-- Nested VASPs — subsidiaries under a parent VASP can share infrastructure
+- Nested VASPs - subsidiaries under a parent VASP can share infrastructure
 - But this is for corporate structure, not unrelated parties (LP ≠ subsidiary of protocol)
 
 **What Notabene does NOT share:**
@@ -212,7 +212,7 @@ Each party writes their own jurisdiction rules with:
 | Pinata | IPFS audit record storage | Must have |
 | Custom rules | Jurisdiction, asset rules | Must have |
 
-Pinata pins AuditRecords to IPFS. Content-addressed — the CID is derived from the content. On-chain `auditHash` provides tamper detection independent of IPFS. Free tier sufficient for hackathon.
+Pinata pins AuditRecords to IPFS. Content-addressed - the CID is derived from the content. On-chain `auditHash` provides tamper detection independent of IPFS. Free tier sufficient for hackathon.
 
 ### Near-Term (post-hackathon)
 | Provider | Purpose | Priority |

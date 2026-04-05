@@ -1,4 +1,4 @@
-# 02 — Existing Solutions & Gap Analysis
+# 02 - Existing Solutions & Gap Analysis
 
 ## Overview
 
@@ -6,7 +6,7 @@ Multiple compliance providers exist, each covering a specific domain. This docum
 
 ## Provider Landscape
 
-### Sumsub — Identity Verification Layer
+### Sumsub - Identity Verification Layer
 
 **What they do well:**
 - KYC / Customer Due Diligence (CDD)
@@ -34,7 +34,7 @@ Multiple compliance providers exist, each covering a specific domain. This docum
 
 ---
 
-### Chainalysis / Elliptic — Blockchain Analytics Layer
+### Chainalysis / Elliptic - Blockchain Analytics Layer
 
 **What they do well:**
 - Deep wallet risk scoring
@@ -60,7 +60,7 @@ Multiple compliance providers exist, each covering a specific domain. This docum
 
 ---
 
-### Notabene / TRISA / Sygna — Travel Rule Layer
+### Notabene / TRISA / Sygna - Travel Rule Layer
 
 **What they do well:**
 - VASP-to-VASP originator/beneficiary data exchange
@@ -83,7 +83,7 @@ Multiple compliance providers exist, each covering a specific domain. This docum
 
 ---
 
-### Jurisdiction Rules / Risk Aggregation — Custom Logic
+### Jurisdiction Rules / Risk Aggregation - Custom Logic
 
 **What exists today:**
 - No off-the-shelf provider offers a configurable rules engine for jurisdiction-specific asset trading restrictions, trade size thresholds, structuring detection, or risk aggregation across multiple compliance providers.
@@ -93,7 +93,7 @@ Multiple compliance providers exist, each covering a specific domain. This docum
 
 ---
 
-### Unified Audit Trail — Nobody
+### Unified Audit Trail - Nobody
 
 **What exists today:**
 - Each provider (Sumsub, Chainalysis, Notabene) maintains records of their own checks within their own platform.
@@ -122,7 +122,7 @@ Multiple compliance providers exist, each covering a specific domain. This docum
 
 ## The Gap
 
-Every individual check has a competent provider. No provider — and no combination of providers — offers:
+Every individual check has a competent provider. No provider - and no combination of providers - offers:
 
 1. **Atomic per-trade orchestration** across all compliance domains (identity + blockchain analytics + Travel Rule + jurisdiction rules)
 2. **A shared, unified audit trail** that combines all provider results into a single per-trade record accessible by all parties

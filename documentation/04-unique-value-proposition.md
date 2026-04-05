@@ -1,12 +1,12 @@
-# 04 — Unique Value Proposition
+# 04 - Unique Value Proposition
 
 ## One-Liner
 
-A verifiable compliance orchestration layer that runs all per-trade checks once, across all providers, inside a TEE and decentralized network, producing a shared audit trail that every counterparty can trust — eliminating redundant compliance infrastructure across decentralized protocols.
+A verifiable compliance orchestration layer that runs all per-trade checks once, across all providers, inside a TEE and decentralized network, producing a shared audit trail that every counterparty can trust - eliminating redundant compliance infrastructure across decentralized protocols.
 
 ## The Four Pillars of Value
 
-### 1. Eliminate Redundancy — The Cost Argument
+### 1. Eliminate Redundancy - The Cost Argument
 
 Today, N parties independently pay for the same compliance checks on the same trades.
 
@@ -31,7 +31,7 @@ Today, N parties independently pay for the same compliance checks on the same tr
 
 The biggest single saving: **Chainalysis.** They have zero sharing mechanism. Every party independently pays $100-500K/year to screen the same wallets. The engine turns N Chainalysis licenses into 1.
 
-### 2. Unified Audit Trail — The Compliance Argument
+### 2. Unified Audit Trail - The Compliance Argument
 
 Today, a regulator asking "show me the compliance picture for Trade X" gets fragmented, potentially inconsistent answers from each party.
 
@@ -47,7 +47,7 @@ Today, a regulator asking "show me the compliance picture for Trade X" gets frag
 
 This is especially powerful for **MiCA compliance** (July 2026), which mandates 5-year record retention and comprehensive audit trails for all compliance actions.
 
-### 3. Verifiable Execution — The Trust Argument
+### 3. Verifiable Execution - The Trust Argument
 
 This is the deepest and most differentiated value.
 
@@ -56,12 +56,12 @@ This is the deepest and most differentiated value.
 **The solution:** Verifiable execution through CRE.
 
 The verification chain:
-1. **Source code is open source** — anyone can read the compliance rules
-2. **Workflow ID is a hash of the compiled code** — deterministic, verifiable
-3. **Consumer contract pins the workflow ID on-chain** — only that specific code is accepted
-4. **DON consensus** — 21 independent nodes execute and agree on the result
-5. **Signed report on-chain** — threshold signature proves the DON produced it
-6. **Audit hash on-chain** — proves the off-chain audit record hasn't been tampered with
+1. **Source code is open source** - anyone can read the compliance rules
+2. **Workflow ID is a hash of the compiled code** - deterministic, verifiable
+3. **Consumer contract pins the workflow ID on-chain** - only that specific code is accepted
+4. **DON consensus** - 21 independent nodes execute and agree on the result
+5. **Signed report on-chain** - threshold signature proves the DON produced it
+6. **Audit hash on-chain** - proves the off-chain audit record hasn't been tampered with
 
 **If the workflow code changes, the workflow ID changes.** The consumer contract rejects reports from unknown workflows. All changes are visible on-chain.
 
@@ -69,13 +69,13 @@ The verification chain:
 
 Building on CRE with open-source code and on-chain pinned workflow IDs creates a structural commitment: **"I cannot selectively approve or reject trades. I cannot change the rules without it being visible on-chain. I cannot treat one integrator differently from another."**
 
-This is "self-binding" — deliberately removing your own ability to cheat. This is a genuine moat: competitors with centralized backends cannot make this claim even if they wanted to.
+This is "self-binding" - deliberately removing your own ability to cheat. This is a genuine moat: competitors with centralized backends cannot make this claim even if they wanted to.
 
-### 4. Preserve Protocol Decentralization — The Structural Argument
+### 4. Preserve Protocol Decentralization - The Structural Argument
 
-DeFi protocols that add KYC infrastructure directly create an identifiable operator entity, triggering CASP classification under MiCA, the regulatory escalator, and the destruction of their decentralized architecture. This is explored in full detail in [10 — The Compliance Catch-22](./10-compliance-catch22.md).
+DeFi protocols that add KYC infrastructure directly create an identifiable operator entity, triggering CASP classification under MiCA, the regulatory escalator, and the destruction of their decentralized architecture. This is explored in full detail in [10 - The Compliance Catch-22](./10-compliance-catch22.md).
 
-The engine resolves this by separating the compliance infrastructure from the protocol. The protocol reads an on-chain attestation from an independent, decentralized compliance network. This is architecturally identical to reading a Chainlink price feed — the protocol consumes data, it doesn't operate the oracle.
+The engine resolves this by separating the compliance infrastructure from the protocol. The protocol reads an on-chain attestation from an independent, decentralized compliance network. This is architecturally identical to reading a Chainlink price feed - the protocol consumes data, it doesn't operate the oracle.
 
 **What this means for protocol teams:**
 - The protocol does not hold PII → harder to classify as data processor
@@ -84,7 +84,7 @@ The engine resolves this by separating the compliance infrastructure from the pr
 - The protocol reads on-chain data → same as reading any other oracle/data feed
 - The protocol may preserve its "fully decentralized" exemption under MiCA
 
-**The Aave Arc lesson:** Aave tried a permissioned sidecar (Aave Arc + Fireblocks whitelisting). It created a separate centralized product, fragmented liquidity, and didn't scale. The compliance engine avoids this by keeping the protocol intact — same pools, same contracts, just with an attestation-gated access layer.
+**The Aave Arc lesson:** Aave tried a permissioned sidecar (Aave Arc + Fireblocks whitelisting). It created a separate centralized product, fragmented liquidity, and didn't scale. The compliance engine avoids this by keeping the protocol intact - same pools, same contracts, just with an attestation-gated access layer.
 
 **Honest caveat:** This is legally untested territory. A regulator might still classify the protocol as a facilitator. But the argument is structurally much stronger than any current alternative.
 
@@ -94,7 +94,7 @@ The engine resolves this by separating the compliance infrastructure from the pr
 |---|---|---|---|
 | KYC/AML checks | Yes (core) | Yes (via API) | Yes (via API in TEE) |
 | Blockchain analytics | Basic proxy | Via Chainalysis API | Via Chainalysis API in TEE |
-| Shared across parties | Partial (Reusable KYC only) | Trust the operator | Verifiable — DON consensus |
+| Shared across parties | Partial (Reusable KYC only) | Trust the operator | Verifiable - DON consensus |
 | Audit trail | Within Sumsub only | Your DB | Unified, IPFS + on-chain hash |
 | Per-trade orchestration | No | Yes | Yes |
 | Verifiable execution | No | No | Yes (open code + DON) |
@@ -159,7 +159,7 @@ The temptation exists. The risk exists.
 
 CRE: You physically CANNOT. The code is open source, the workflowId is pinned, the DON runs it. You'd have to update the workflow (new ID, visible on-chain), get the consumer contract updated (visible on-chain), and do all this publicly.
 
-This is "self-binding" — you're removing your own
+This is "self-binding" - you're removing your own
 ability to cheat. This is valuable because:
 - It makes your pitch stronger ("we CAN'T cheat")
 - It reduces your legal risk ("we COULDN'T have cheated")

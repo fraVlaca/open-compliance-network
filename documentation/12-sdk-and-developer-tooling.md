@@ -1,8 +1,8 @@
-# 12 — SDK & Developer Tooling
+# 12 - SDK & Developer Tooling
 
 ## Overview
 
-The compliance engine offers developer tooling at three levels: a **Backend SDK** (`@ocn/node-sdk`) for integrators to orchestrate CRE workflows, a **Frontend SDK** (`@ocn/react`) for user-facing KYC flows, and **on-chain contracts** for smart contract integration. The goal is minimal integration effort — integrators never touch compliance providers directly.
+The compliance engine offers developer tooling at three levels: a **Backend SDK** (`@ocn/node-sdk`) for integrators to orchestrate CRE workflows, a **Frontend SDK** (`@ocn/react`) for user-facing KYC flows, and **on-chain contracts** for smart contract integration. The goal is minimal integration effort - integrators never touch compliance providers directly.
 
 ## Architecture: Backend SDK + Frontend SDK
 
@@ -37,7 +37,7 @@ User's Browser             Integrator's Backend         CRE Workflows (TEE)     
 ```
 
 **Why this split:**
-- **Sumsub API credentials never leave CRE's TEE.** The Backend SDK triggers CRE workflows — it never holds API keys.
+- **Sumsub API credentials never leave CRE's TEE.** The Backend SDK triggers CRE workflows - it never holds API keys.
 - **No Sumsub webhooks needed.** The Frontend SDK detects KYC completion (Sumsub JS event), signals the Backend SDK, which triggers CRE Workflow A to PULL the status. Pure pull model.
 - **Integrator's wallet = API key.** The backend authenticates by signing CRE HTTP trigger requests with the integrator's private key. CRE verifies this against the on-chain IntegratorRegistry.
 
@@ -47,22 +47,22 @@ The engine runs **four CRE workflows**, all using Confidential HTTP for credenti
 
 | Workflow | Trigger | Purpose | Writes On-chain? |
 |----------|---------|---------|-----------------|
-| **D: Token Generation** | HTTP | Generate Sumsub access token for iframe | No — returns token |
-| **A: Identity Verification** | HTTP | Verify KYC status + issue credential | Yes — via onReport() |
-| **B: Per-Trade Compliance** | EVM Log | Per-trade sanctions/risk check | Yes — via onReport() |
-| **C: Identity Audit** | HTTP | Fetch KYC data for integrators (encrypted PII) | No — returns data |
+| **D: Token Generation** | HTTP | Generate Sumsub access token for iframe | No - returns token |
+| **A: Identity Verification** | HTTP | Verify KYC status + issue credential | Yes - via onReport() |
+| **B: Per-Trade Compliance** | EVM Log | Per-trade sanctions/risk check | Yes - via onReport() |
+| **C: Identity Audit** | HTTP | Fetch KYC data for integrators (encrypted PII) | No - returns data |
 
 ### Confidential HTTP (Privacy Standard)
 
 All four workflows use `ConfidentialHTTPClient` from the CRE SDK:
-- **Sumsub App Token** injected via `{{.sumsubAppToken}}` template — resolved from Vault DON, never visible to workflow nodes
-- **Chainalysis API Key** injected via `{{.chainalysisApiKey}}` template — same protection
+- **Sumsub App Token** injected via `{{.sumsubAppToken}}` template - resolved from Vault DON, never visible to workflow nodes
+- **Chainalysis API Key** injected via `{{.chainalysisApiKey}}` template - same protection
 - **HMAC-SHA256 signature** computed in handler code (needs the secret key for computation), passed as a regular header
 - **Response encryption** (Workflow C): `encryptOutput: true` encrypts PII with AES-GCM before it leaves the TEE enclave
 
 ## Backend SDK (`@ocn/node-sdk`)
 
-The Backend SDK is a thin orchestration layer that triggers CRE workflows. It holds NO provider credentials — all API calls go through CRE's Confidential HTTP.
+The Backend SDK is a thin orchestration layer that triggers CRE workflows. It holds NO provider credentials - all API calls go through CRE's Confidential HTTP.
 
 ### Routes
 
@@ -84,7 +84,7 @@ Inside TEE:
   1. EVM read: IntegratorRegistry.getIntegrator(integratorAddress)
      -> Verify active == true, appId matches
   2. Build externalUserId: {workspaceId}:{appId}:{wallet}
-     (namespace scoping — different integrators' users don't collide)
+     (namespace scoping - different integrators' users don't collide)
   3. Confidential HTTP POST -> Sumsub: create applicant
      X-App-Token: {{.sumsubAppToken}}  (from Vault DON)
   4. Confidential HTTP POST -> Sumsub: generate access token
@@ -101,7 +101,7 @@ Backend calls Workflow A via CRE HTTP trigger:
   Input: { walletAddress }
 
 Inside TEE:
-  1. EVM read: IntegratorRegistry — get broker appId, workspace
+  1. EVM read: IntegratorRegistry - get broker appId, workspace
   2. Confidential HTTP GET -> Sumsub: pull applicant status
      If not found (404) -> create applicant
      If not GREEN -> return { status: "not_approved" }
@@ -226,17 +226,17 @@ Already implemented via `@chainlink/ace` + the compliance engine's consumer cont
 
 ### Integration Patterns
 
-**Pattern 1 — Simplest (1 line):**
+**Pattern 1 - Simplest (1 line):**
 ```solidity
 require(consumer.isVerified(msg.sender), "Not compliant");
 ```
 
-**Pattern 2 — ACE PolicyEngine:**
+**Pattern 2 - ACE PolicyEngine:**
 ```solidity
 function trade(...) external runPolicy { ... }
 ```
 
-**Pattern 3 — Async per-trade with auto-callback:**
+**Pattern 3 - Async per-trade with auto-callback:**
 ```solidity
 emit ComplianceCheckRequested(tradeId, msg.sender, counterparty, asset, amount);
 // CRE Workflow B checks -> auto-calls onComplianceApproved(tradeId)
@@ -293,16 +293,16 @@ LP joins:
 ```
 
 No CRE workflow is triggered by registration because:
-- We use one master Sumsub account with externalUserId namespacing — nothing to set up at the provider level
-- The on-chain registry IS the setup — CRE reads it later when processing requests
-- The integrator's wallet IS their API key — no key generation needed
+- We use one master Sumsub account with externalUserId namespacing - nothing to set up at the provider level
+- The on-chain registry IS the setup - CRE reads it later when processing requests
+- The integrator's wallet IS their API key - no key generation needed
 
 ## Secrets & Privacy
 
 All provider credentials are stored in CRE's Vault DON:
-- **Sumsub App Token + Secret Key** — threshold-encrypted, decrypted only in TEE
-- **Chainalysis API Key** — same protection
-- **AES Encryption Key** — for response encryption in audit workflow
+- **Sumsub App Token + Secret Key** - threshold-encrypted, decrypted only in TEE
+- **Chainalysis API Key** - same protection
+- **AES Encryption Key** - for response encryption in audit workflow
 
 The Backend SDK holds NO provider credentials. It only has the integrator's wallet private key for signing CRE HTTP trigger requests.
 

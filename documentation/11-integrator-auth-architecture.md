@@ -1,12 +1,12 @@
-# 11 — Integrator Authentication & API Key Architecture
+# 11 - Integrator Authentication & API Key Architecture
 
 ## Overview
 
 Every integrator (protocol, broker, LP) needs an identity in the compliance engine. This identity determines:
-- **Who they are** — "I am Broker XYZ in Protocol ABC's workspace"
-- **What they can see** — "Only users I onboarded and their trades"
-- **What they can do** — "Trigger KYC for new users, read audit data"
-- **Where they belong** — "Protocol ABC workspace, broker role"
+- **Who they are** - "I am Broker XYZ in Protocol ABC's workspace"
+- **What they can see** - "Only users I onboarded and their trades"
+- **What they can do** - "Trigger KYC for new users, read audit data"
+- **Where they belong** - "Protocol ABC workspace, broker role"
 
 This document compares two architectures for managing integrator identity, scoping, and data access: **on-chain** (wallet-based) and **off-chain** (traditional API keys with a backend).
 
@@ -25,7 +25,7 @@ Protocol creates workspace:
   → Calls IntegratorRegistry.createWorkspace("proto_abc")
   → Protocol's wallet = admin of workspace
   → APP-ID generated deterministically on-chain
-  → No API key needed — wallet IS the key
+  → No API key needed - wallet IS the key
 
 Broker joins workspace:
   → Calls IntegratorRegistry.joinWorkspace("proto_abc", BROKER)
@@ -78,7 +78,7 @@ SUMSUB:
 
   CRE workflow creates applicants with namespaced IDs
   CRE workflow enforces scoping when returning data
-  Sumsub sees a flat list — no awareness of your tenants
+  Sumsub sees a flat list - no awareness of your tenants
 
   Why not Sumsub source keys?
     Source keys can group applicants and scope app tokens,
@@ -98,7 +98,7 @@ CHAINALYSIS:
     Chainalysis doesn't know about your integrators
 ```
 
-This means onboarding a new protocol, broker, or LP is **fully automated** — just an on-chain transaction. No manual dashboard steps in any provider.
+This means onboarding a new protocol, broker, or LP is **fully automated** - just an on-chain transaction. No manual dashboard steps in any provider.
 
 ### How Each Action Works
 
@@ -116,7 +116,7 @@ CRE Workflow A receives it (HTTP Trigger)
      ├── Creates Sumsub applicant with namespaced ID:
      │   POST /resources/applicants
      │   externalUserId = "proto_abc:broker_xyz:0xUserWallet"
-     │   (Sumsub sees one flat applicant — scoping is in the ID format)
+     │   (Sumsub sees one flat applicant - scoping is in the ID format)
      │
      ├── Includes brokerAppId in the on-chain credential when writing:
      │   CredentialRegistry.registerCredential(ccid, KYC_VERIFIED, expiresAt,
@@ -349,7 +349,7 @@ Different data types have different access paths depending on sensitivity:
 ┌──────────────────────────┬────────────────────────┬─────────────────────────────┐
 │ Data type                │ Access method           │ Why                         │
 ├──────────────────────────┼────────────────────────┼─────────────────────────────┤
-│ KYC/AML detailed info    │ CRE Workflow C          │ Sensitive PII — must be     │
+│ KYC/AML detailed info    │ CRE Workflow C          │ Sensitive PII - must be     │
 │ (document checks,        │ (HTTP trigger,          │ fetched from Sumsub inside  │
 │  sanctions details,      │  Confidential HTTP,     │ TEE, scoped by role,        │
 │  PEP status, risk        │  encrypted response)    │ encrypted to requester.     │
@@ -377,7 +377,7 @@ Different data types have different access paths depending on sensitivity:
 └──────────────────────────┴────────────────────────┴─────────────────────────────┘
 ```
 
-**Rule of thumb:** If the data is sensitive (PII, detailed provider responses), access it through a CRE workflow in the TEE. If it's a status or a hash (non-sensitive), read it directly on-chain. Per-trade audit records are stored off-chain but verified against on-chain hashes — no workflow needed for read access, just hash verification.
+**Rule of thumb:** If the data is sensitive (PII, detailed provider responses), access it through a CRE workflow in the TEE. If it's a status or a hash (non-sensitive), read it directly on-chain. Per-trade audit records are stored off-chain but verified against on-chain hashes - no workflow needed for read access, just hash verification.
 
 ---
 
@@ -522,7 +522,7 @@ Thin API Backend:
 | **Multi-tenant scoping** | AppId embedded in on-chain data, verifiable | Backend enforces, trust the server |
 | **DX quality** | Wallet signatures, chain reads, more DIY | REST API, managed WebSocket, familiar patterns |
 | **Infrastructure needed** | None (CRE + chain + RPC provider) | Server + DB + WebSocket server |
-| **Trust model** | Trustless — scoping on-chain, data via TEE | Trust the backend to scope correctly |
+| **Trust model** | Trustless - scoping on-chain, data via TEE | Trust the backend to scope correctly |
 | **Uptime dependency** | Chain + CRE DON (decentralized) | Your server (single point of failure) |
 | **Cost to operate** | Gas for contract calls + CRE fees | Server hosting + DB + maintenance |
 
@@ -532,14 +532,14 @@ Thin API Backend:
 
 We chose the fully on-chain architecture (Architecture A) for the following reasons:
 
-**Trustless scoping.** In the off-chain model, integrators must trust that the backend correctly enforces scoping — that a broker only sees their users, that an LP only sees their trades. With the on-chain model, scoping is verifiable: the appId is embedded in on-chain credentials and reports. Anyone can independently verify which broker onboarded which user and which LP filled which trade. The backend could silently misscope data; the chain cannot.
+**Trustless scoping.** In the off-chain model, integrators must trust that the backend correctly enforces scoping - that a broker only sees their users, that an LP only sees their trades. With the on-chain model, scoping is verifiable: the appId is embedded in on-chain credentials and reports. Anyone can independently verify which broker onboarded which user and which LP filled which trade. The backend could silently misscope data; the chain cannot.
 
-**No infrastructure to maintain or trust.** DeFi protocols — our target customers — are allergic to centralized infrastructure dependencies. A backend server is a single point of failure: if it goes down, integrators can't access compliance data. With the on-chain model, the data lives on the chain (always available) and sensitive data access goes through CRE (Chainlink DON, 21 independent nodes). There is no server to maintain, no database to back up, no downtime to worry about. This is especially important for small teams that can't afford 24/7 ops.
+**No infrastructure to maintain or trust.** DeFi protocols - our target customers - are allergic to centralized infrastructure dependencies. A backend server is a single point of failure: if it goes down, integrators can't access compliance data. With the on-chain model, the data lives on the chain (always available) and sensitive data access goes through CRE (Chainlink DON, 21 independent nodes). There is no server to maintain, no database to back up, no downtime to worry about. This is especially important for small teams that can't afford 24/7 ops.
 
 **Consistent with the core value proposition.** The entire compliance engine is built on the premise that protocols shouldn't need to trust a centralized operator. Adding a centralized backend for integrator management would undermine this premise. If we're telling protocols "you can trust our compliance checks because they run on a decentralized DON," we shouldn't then say "but trust our centralized server for access control." The on-chain model keeps the trust story consistent end-to-end.
 
-**Wallet signatures are native to our users.** Every integrator in the DeFi ecosystem already has an EVM wallet. Using wallet signatures instead of API keys is not a UX burden for this audience — it's the expected pattern. They already sign transactions, already connect wallets to dApps, already use wallet-based authentication. API keys would be the foreign concept.
+**Wallet signatures are native to our users.** Every integrator in the DeFi ecosystem already has an EVM wallet. Using wallet signatures instead of API keys is not a UX burden for this audience - it's the expected pattern. They already sign transactions, already connect wallets to dApps, already use wallet-based authentication. API keys would be the foreign concept.
 
 **Self-sovereign data access.** With the on-chain model, integrators don't depend on us to access their data. If we disappear tomorrow, the on-chain credentials, reports, and scoping data are still there. Any integrator can read the chain, filter by their appId, and access their records. The CRE workflows can be redeployed by anyone (open source). There is no vendor lock-in. This is a fundamentally different reliability guarantee than a centralized backend.
 
-**The backend can always be added later.** The on-chain model provides the complete functionality. A thin backend (REST API, managed WebSocket, API key convenience) can be layered on top as a DX improvement without changing the underlying architecture. The reverse is not true — starting with a centralized backend and later decentralizing is architecturally invasive. We chose to build the trustless foundation first.
+**The backend can always be added later.** The on-chain model provides the complete functionality. A thin backend (REST API, managed WebSocket, API key convenience) can be layered on top as a DX improvement without changing the underlying architecture. The reverse is not true - starting with a centralized backend and later decentralizing is architecturally invasive. We chose to build the trustless foundation first.

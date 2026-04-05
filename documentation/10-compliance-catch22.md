@@ -1,10 +1,10 @@
-# 10 — The Compliance Catch-22: Why DeFi Protocols Can't Add KYC Without Destroying Themselves
+# 10 - The Compliance Catch-22: Why DeFi Protocols Can't Add KYC Without Destroying Themselves
 
 ## The Core Dilemma
 
-Decentralized protocols face an existential trap: they need compliance to attract institutional capital, but adding compliance infrastructure destroys the decentralization that makes them valuable — and potentially exempt from the heaviest regulations.
+Decentralized protocols face an existential trap: they need compliance to attract institutional capital, but adding compliance infrastructure destroys the decentralization that makes them valuable - and potentially exempt from the heaviest regulations.
 
-This is not a theoretical concern. DeFi activity in Europe declined sharply after MiCA — DEX trading volumes fell 18.9% in Q1 2025, wallet creation dropped 22%, and over 40% of EU-based DeFi traders switched to offshore platforms. Protocols are caught between institutional demand and regulatory reality.
+This is not a theoretical concern. DeFi activity in Europe declined sharply after MiCA - DEX trading volumes fell 18.9% in Q1 2025, wallet creation dropped 22%, and over 40% of EU-based DeFi traders switched to offshore platforms. Protocols are caught between institutional demand and regulatory reality.
 
 ## The Compliance Crystallization Problem
 
@@ -29,7 +29,7 @@ Institutions say: "We want to use this, but we need KYC"
   → Without compliance: no institutional capital
 ```
 
-### Step 3: The Trap Springs — WHO Runs the KYC?
+### Step 3: The Trap Springs - WHO Runs the KYC?
 
 ```
 Someone has to:
@@ -80,7 +80,7 @@ The moment the Foundation runs KYC:
   → It IS a CASP → LOST the "fully decentralized" exemption
 ```
 
-The ECB published findings in 2025-2026 arguing that most DeFi DAOs don't meet the "fully decentralized" threshold anyway — governance token concentration, upgrade mechanisms, and treasury control all count against them. Many protocols are already in a gray zone. But adding KYC infrastructure pushes them definitively into regulated territory.
+The ECB published findings in 2025-2026 arguing that most DeFi DAOs don't meet the "fully decentralized" threshold anyway - governance token concentration, upgrade mechanisms, and treasury control all count against them. Many protocols are already in a gray zone. But adding KYC infrastructure pushes them definitively into regulated territory.
 
 ### Step 6: The Regulatory Escalator
 
@@ -132,7 +132,7 @@ Institutions stay out. Everyone loses.
 
 The foundation or company that runs KYC becomes the de facto operator of the protocol in regulators' eyes, regardless of what the smart contracts say.
 
-A protocol can claim decentralization in its whitepaper, but if a single entity decides who can access the protocol via KYC approval/denial, that entity exercises control — the core criterion FATF uses to identify VASPs.
+A protocol can claim decentralization in its whitepaper, but if a single entity decides who can access the protocol via KYC approval/denial, that entity exercises control - the core criterion FATF uses to identify VASPs.
 
 ### 2. Censorship Vector
 
@@ -164,7 +164,7 @@ PII exists somewhere. That somewhere has obligations:
 - **Data Protection Officer**: appointment required
 - **Impact assessments**: regular data protection reviews
 
-A decentralized protocol governed by a DAO is not equipped to handle any of this. The moment it tries, it needs staff, legal counsel, infrastructure — all of which centralize it.
+A decentralized protocol governed by a DAO is not equipped to handle any of this. The moment it tries, it needs staff, legal counsel, infrastructure - all of which centralize it.
 
 ### 4. The Regulatory Escalator (Detailed)
 
@@ -200,16 +200,16 @@ There is no governance structure that avoids this trilemma within a protocol tha
 Aave attempted to solve this with **Aave Arc** (launched January 2022):
 
 - Created a separate, permissioned instance of Aave V2
-- Fireblocks became the sole "whitelister" — running KYC and approving institutions
+- Fireblocks became the sole "whitelister" - running KYC and approving institutions
 - 30 licensed financial institutions whitelisted at launch
 
 **What happened:**
 - It was essentially a separate, centralized product alongside the decentralized one
 - Fireblocks CEO acknowledged it goes against DeFi principles, calling it "a necessary overcorrection"
-- It fragmented liquidity (permissioned pool vs public pool — different markets, different rates)
+- It fragmented liquidity (permissioned pool vs public pool - different markets, different rates)
 - Fireblocks became a single centralized point of trust and failure
-- One whitelister for the entire ecosystem — doesn't scale
-- The approach didn't solve the fundamental problem — it just moved the centralization to a different party
+- One whitelister for the entire ecosystem - doesn't scale
+- The approach didn't solve the fundamental problem - it just moved the centralization to a different party
 
 **The lesson:** Creating a permissioned sidecar next to a decentralized protocol doesn't solve the catch-22. It creates two systems: one decentralized (no institutions), one centralized (no DeFi benefits). Neither serves both markets.
 
@@ -267,7 +267,7 @@ CRE Compliance Engine (independent infrastructure)
  from an independent, decentralized compliance network.
 
  This is equivalent to reading a Chainlink price feed.
- We don't operate the oracle — we consume the data."
+ We don't operate the oracle - we consume the data."
 ```
 
 ### The price feed analogy
@@ -306,7 +306,7 @@ With engine:
 | Dimension | Protocol runs own KYC | Protocol uses CRE engine |
 |---|---|---|
 | Entity crystallization | Foundation becomes operator | Protocol stays a protocol |
-| CASP classification risk | High — controls access | Lower — reads attestation |
+| CASP classification risk | High - controls access | Lower - reads attestation |
 | PII liability | Foundation is data controller | Engine operator handles PII |
 | Censorship vector | Foundation controls access | DON consensus, open code |
 | Governance conflict | DAO or Foundation decides rules | Rules in open-source code, verifiable |
@@ -315,7 +315,7 @@ With engine:
 
 ## The Honest Caveat
 
-This is legally untested territory. A regulator might still argue that integrating a compliance engine — even a decentralized one — makes the protocol a "facilitator" subject to CASP requirements. The MiCA exemption for "fully decentralized" is narrow and contested.
+This is legally untested territory. A regulator might still argue that integrating a compliance engine - even a decentralized one - makes the protocol a "facilitator" subject to CASP requirements. The MiCA exemption for "fully decentralized" is narrow and contested.
 
 But the argument is structurally much stronger than running your own backend:
 - You don't hold PII → harder to classify as data processor
@@ -327,7 +327,7 @@ The architecture makes the legal argument *possible*. No current alternative doe
 
 ## Why This Is the Lead Argument
 
-Everything else the engine offers — cost savings, audit trails, verifiability — is valuable but not existential.
+Everything else the engine offers - cost savings, audit trails, verifiability - is valuable but not existential.
 
 | Value Proposition | Type | Impact |
 |---|---|---|
@@ -339,4 +339,4 @@ Everything else the engine offers — cost savings, audit trails, verifiability 
 
 The headline:
 
-> We enable decentralized protocols to serve regulated institutions without compromising their decentralization — by separating the compliance infrastructure from the protocol itself.
+> We enable decentralized protocols to serve regulated institutions without compromising their decentralization - by separating the compliance infrastructure from the protocol itself.

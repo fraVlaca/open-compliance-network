@@ -10,7 +10,7 @@ This documentation covers the design, architecture, and value proposition of a s
 |----------|-------------|
 | [01 - Problem Statement](./01-problem-statement.md) | The compliance fragmentation problem in institutional DeFi |
 | [02 - Existing Solutions & Gap Analysis](./02-existing-solutions-gap.md) | What providers exist today, what they solve, and the gap they leave |
-| [03 - Solution Overview](./03-solution-overview.md) | The unified compliance engine — what it is and how it works |
+| [03 - Solution Overview](./03-solution-overview.md) | The unified compliance engine - what it is and how it works |
 | [04 - Unique Value Proposition](./04-unique-value-proposition.md) | USP, competitive moat, and the self-binding argument |
 
 ### Technical Documentation
@@ -32,4 +32,4 @@ This documentation covers the design, architecture, and value proposition of a s
 - **Core Technology**: Chainlink Runtime Environment (CRE), Confidential HTTP, Confidential Compute (TEE)
 - **Tracks**: Arc (Circle), Chainlink CRE, Chainlink Privacy Standard (Confidential HTTP)
 - **Target Use Case**: Permissioned institutional DeFi swap protocol with multiple counterparties (LPs, solvers, brokers, custodians)
-- **Four CRE Workflows**: Token Generation (D), Identity Verification (A), Per-Trade Compliance (B), Identity Audit (C) — all using ConfidentialHTTPClient
+- **Four CRE Workflows**: Token Generation (D), Identity Verification (A), Per-Trade Compliance (B), Identity Audit (C) - all using ConfidentialHTTPClient

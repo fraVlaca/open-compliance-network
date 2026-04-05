@@ -1,4 +1,4 @@
-# 05 — Technical Architecture
+# 05 - Technical Architecture
 
 ## System Overview
 
@@ -85,7 +85,7 @@ struct ComplianceReport {
 
 **Auto-callback:** When a report arrives, if the `sourceContract` is registered via `registerCallback()`, the consumer automatically calls `onComplianceApproved(tradeId)` or `onComplianceRejected(tradeId, reason)` on the protocol contract. This enables single-tx swaps: the user calls `swap()`, CRE runs checks, the callback executes the trade. Wrapped in try-catch so the report is always stored even if the callback fails.
 
-**Immutability:** After configuration, the contract owner can renounce ownership. This makes the workflow ID, author, and forwarder address immutable — nobody can change which workflow produces accepted reports.
+**Immutability:** After configuration, the contract owner can renounce ownership. This makes the workflow ID, author, and forwarder address immutable - nobody can change which workflow produces accepted reports.
 
 ### 3. KeystoneForwarder Contract (Chainlink infrastructure)
 
@@ -103,7 +103,7 @@ This is existing Chainlink infrastructure, not custom code.
 
 - **Language:** TypeScript (compiled to WASM via Javy)
 - **Execution:** Runs on Chainlink Decentralized Oracle Network (DON)
-- **Consensus:** Byzantine Fault Tolerant (BFT) — 21 independent nodes must agree
+- **Consensus:** Byzantine Fault Tolerant (BFT) - 21 independent nodes must agree
 - **Confidentiality:** Confidential HTTP capability executes API calls inside TEE
 - **Secrets:** Stored in Vault DON (threshold-encrypted, decrypted only in TEE)
 
@@ -112,7 +112,7 @@ This is existing Chainlink infrastructure, not custom code.
 The workflow ID is a hash of the compiled binary + configuration. This means:
 - Changing one line of code produces a new workflow ID
 - Anyone can compile the open-source code and verify the hash matches
-- The consumer contract pins a specific workflow ID — mismatched IDs are rejected
+- The consumer contract pins a specific workflow ID - mismatched IDs are rejected
 - Workflow updates are visible on-chain (new ID registered in Workflow Registry)
 
 ### Four Workflows
@@ -131,20 +131,20 @@ The engine uses four dedicated CRE workflows:
 The engine uses four dedicated workflows rather than a monolithic one:
 
 - **CRE constraint: one trigger type per workflow.** The per-trade workflow (EVM Log Trigger) cannot share a workflow with the identity workflows (HTTP Trigger).
-- **Update isolation.** Each workflow has its own workflowId (hash of the binary). Fixing a bug in the audit workflow doesn't change the verification workflow's ID — the credential consumer contract is unaffected.
+- **Update isolation.** Each workflow has its own workflowId (hash of the binary). Fixing a bug in the audit workflow doesn't change the verification workflow's ID - the credential consumer contract is unaffected.
 - **Independent authorization.** Identity verification is open (any wallet can trigger their own KYC). Identity audit is restricted (only registered integrator wallets). Per-trade compliance is permissionless (gas-gated via contract events). Separate workflows allow different `authorizedKeys` per trigger.
-- **Secrets are per-workflow in CRE** (each has its own Vault DON store). Provider credentials (Sumsub, Chainalysis) are duplicated across workflows. This is operationally manageable — secret rotation updates 3 workflows instead of 1 — and does not reduce security since each copy has the same threshold-encryption and TEE protections.
+- **Secrets are per-workflow in CRE** (each has its own Vault DON store). Provider credentials (Sumsub, Chainalysis) are duplicated across workflows. This is operationally manageable - secret rotation updates 3 workflows instead of 1 - and does not reduce security since each copy has the same threshold-encryption and TEE protections.
 
 ### Trigger Mechanism
 
-**EVM Log Trigger** — permissionless:
+**EVM Log Trigger** - permissionless:
 - Anyone who can send a transaction can trigger a compliance check
 - The workflow listens for `ComplianceCheckRequested` events from the Swap Protocol Contract
 - No whitelisting required for trade participants
 
 ### Secrets Management
 
-All provider credentials are stored in the CRE Vault DON. Each provider operates under a single master account — multi-tenancy is enforced by the compliance engine's on-chain registry and CRE workflow logic, not by the providers.
+All provider credentials are stored in the CRE Vault DON. Each provider operates under a single master account - multi-tenancy is enforced by the compliance engine's on-chain registry and CRE workflow logic, not by the providers.
 
 Secrets stored:
 - Sumsub App Token + Secret Key (one master account, applicants namespaced via `externalUserId`)
@@ -176,21 +176,21 @@ Chainlink Confidential Compute (Early Access 2026) extends TEE protection to the
 
 ## Off-Chain Components
 
-### IPFS (Pinata) — Per-Trade Audit Records
+### IPFS (Pinata) - Per-Trade Audit Records
 
-Full AuditRecords are uploaded to IPFS via Pinata at trade time by CRE Workflow B. Stored publicly — no database, no server, no REST API.
+Full AuditRecords are uploaded to IPFS via Pinata at trade time by CRE Workflow B. Stored publicly - no database, no server, no REST API.
 
-- **Content-addressed** — the CID is derived from the content. Tamper-evident by design.
-- **On-chain integrity** — `auditHash` (keccak256 of the record) stored on-chain, DON-signed. Independent verification.
-- **IPFS CID on-chain** — `ipfsCid` stored in ComplianceReport. Anyone can fetch by CID from any IPFS gateway.
-- **No backend needed** — integrators fetch directly: `https://gateway.pinata.cloud/ipfs/{cid}`
-- **MiCA retention** — Pinata pinning keeps records available. For guaranteed 5-year permanence, records can be mirrored to Arweave.
+- **Content-addressed** - the CID is derived from the content. Tamper-evident by design.
+- **On-chain integrity** - `auditHash` (keccak256 of the record) stored on-chain, DON-signed. Independent verification.
+- **IPFS CID on-chain** - `ipfsCid` stored in ComplianceReport. Anyone can fetch by CID from any IPFS gateway.
+- **No backend needed** - integrators fetch directly: `https://gateway.pinata.cloud/ipfs/{cid}`
+- **MiCA retention** - Pinata pinning keeps records available. For guaranteed 5-year permanence, records can be mirrored to Arweave.
 
-### Sumsub — KYC/AML Identity Data (PII)
+### Sumsub - KYC/AML Identity Data (PII)
 
 PII never enters the audit trail. It stays in Sumsub and is accessed on-demand via CRE Workflow C (Confidential HTTP in TEE). See [07 - Audit Trail Architecture](./07-audit-trail-architecture.md) for the full storage and retrieval design.
 
-## Data Flow — Identity Verification Lifecycle
+## Data Flow - Identity Verification Lifecycle
 
 Before a user can trade, they must be KYC-verified. This is orchestrated by the **Backend SDK** calling two CRE workflows:
 
@@ -230,11 +230,11 @@ Integrator Frontend          Integrator Backend          CRE (TEE)              
 **Key privacy properties:**
 - Sumsub App Token stays in Vault DON / TEE enclave (injected via `{{.sumsubAppToken}}`)
 - Chainalysis API Key stays in Vault DON (injected via `{{.chainalysisApiKey}}`)
-- The integrator backend holds NO provider credentials — only their wallet private key
+- The integrator backend holds NO provider credentials - only their wallet private key
 - HMAC-SHA256 for Sumsub is computed in the workflow handler, App Token injected in TEE
 - The frontend never communicates with CRE or Sumsub APIs directly
 
-## Data Flow — Complete Trade Lifecycle
+## Data Flow - Complete Trade Lifecycle
 
 ```
 T+0s    User submits trade to Swap Protocol Contract
@@ -259,11 +259,11 @@ T+8s    Integrators sync to internal compliance systems
 
 CRE supports multiple EVM-compatible chains. The compliance engine can be deployed on whichever chain the swap protocol uses. The KeystoneForwarder contract is available on major mainnets and testnets (Ethereum, Arbitrum, Base, Avalanche, Polygon, and others).
 
-### Arc (Circle) — Primary Deployment
+### Arc (Circle) - Primary Deployment
 
 The engine is deployed on **Arc Testnet** (Chain ID 5042002) as a foundational DeFi building block for the ecosystem:
 
-- **USDC-native**: Arc uses USDC for gas. The EscrowSwap demo uses USDC for escrow-based swaps — the natural primitive for a stablecoin-first chain.
-- **Institutional-first**: Arc is built for regulated finance. Compliance infrastructure is a prerequisite for institutional adoption — we provide it as shared infrastructure so every protocol doesn't build its own.
+- **USDC-native**: Arc uses USDC for gas. The EscrowSwap demo uses USDC for escrow-based swaps - the natural primitive for a stablecoin-first chain.
+- **Institutional-first**: Arc is built for regulated finance. Compliance infrastructure is a prerequisite for institutional adoption - we provide it as shared infrastructure so every protocol doesn't build its own.
 - **CRE support**: Arc Testnet is a CRE-supported network (CLI v1.0.7+, TS SDK v1.3.1+). The KeystoneForwarder is deployed at `0x6E9EE680ef59ef64Aa8C7371279c27E496b5eDc1`.
 - **Cross-chain ready**: ACE's Cross-Chain Identifiers (CCIDs) make credentials portable. A user verified on Arc can be recognized on any EVM chain via CCIP, bringing Arc's compliance guarantees to the multi-chain ecosystem.

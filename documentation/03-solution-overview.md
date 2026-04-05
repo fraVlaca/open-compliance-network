@@ -1,4 +1,4 @@
-# 03 — Solution Overview: Unified Trustless Compliance Engine
+# 03 - Solution Overview: Unified Trustless Compliance Engine
 
 ## What We Build
 
@@ -14,7 +14,7 @@ The compliance checks exist. The providers exist. What's missing is:
 - A unified audit trail that combines all provider data per trade
 - Verifiable execution that proves the checks actually ran
 
-## How It Works — Identity Verification
+## How It Works - Identity Verification
 
 Before trading, users get KYC-verified via the integrator's frontend and backend:
 
@@ -45,9 +45,9 @@ Integrator Frontend          Integrator Backend          CRE Workflows (TEE)    
        |<-- true -------------------|                           |                        |
 ```
 
-No provider credentials leave CRE's TEE. The integrator backend orchestrates — it never holds API keys.
+No provider credentials leave CRE's TEE. The integrator backend orchestrates - it never holds API keys.
 
-## How It Works — Per-Trade Compliance
+## How It Works - Per-Trade Compliance
 
 ```
 Trade submitted on-chain
@@ -86,7 +86,7 @@ All parties (LP, broker, custodian) can:
 ## What Each Party Gets
 
 ### The Defi Protocol (operator)
-- Compliance gating on every trade — no manual intervention
+- Compliance gating on every trade - no manual intervention
 - One set of provider credentials (in TEE, not on your servers)
 - Full audit trail for regulatory inquiries
 - Open-source compliance rules that all counterparties can verify
@@ -133,8 +133,8 @@ All parties (LP, broker, custodian) can:
 
 ## Why Arc (Circle) First
 
-The compliance engine is deployed on Arc as a foundational DeFi building block for the ecosystem. Arc is purpose-built for institutional finance — USDC-native gas, Circle's full-stack platform, and regulatory-first design. This is the chain where compliance infrastructure matters most.
+The compliance engine is deployed on Arc as a foundational DeFi building block for the ecosystem. Arc is purpose-built for institutional finance - USDC-native gas, Circle's full-stack platform, and regulatory-first design. This is the chain where compliance infrastructure matters most.
 
-Any protocol deploying on Arc can integrate compliance with 1 line of Solidity. The EscrowSwap demo uses USDC for escrow-based swaps with compliance gating — the natural primitive for Arc's stablecoin-first economy. Instead of every Arc protocol independently building compliance stacks, they share one engine. Credentials use ACE's Cross-Chain Identifiers (CCIDs), making compliance status portable across EVM chains via CCIP.
+Any protocol deploying on Arc can integrate compliance with 1 line of Solidity. The EscrowSwap demo uses USDC for escrow-based swaps with compliance gating - the natural primitive for Arc's stablecoin-first economy. Instead of every Arc protocol independently building compliance stacks, they share one engine. Credentials use ACE's Cross-Chain Identifiers (CCIDs), making compliance status portable across EVM chains via CCIP.
 
 Arc's vision is an Economic OS for global-scale finance. Institutional adoption requires compliance. Open Compliance Network provides that compliance as a decentralized, verifiable, shared primitive.

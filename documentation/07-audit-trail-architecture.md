@@ -1,8 +1,8 @@
-# 07 — Audit Trail Architecture
+# 07 - Audit Trail Architecture
 
 ## Design Principle
 
-The audit trail must capture **point-in-time evidence** — what was true when the compliance decision was made, not what is true at the time of the audit. If Chainalysis says a wallet's risk score is 2.1 at trade time and later changes it to 7.8, the audit record must show 2.1 — that's what the decision was based on.
+The audit trail must capture **point-in-time evidence** - what was true when the compliance decision was made, not what is true at the time of the audit. If Chainalysis says a wallet's risk score is 2.1 at trade time and later changes it to 7.8, the audit record must show 2.1 - that's what the decision was based on.
 
 ## Two Types of Compliance Data
 
@@ -13,7 +13,7 @@ TYPE 1: Per-trade audit records (non-PII)
   Contains: risk scores, compliance decisions, flags, jurisdiction checks
   Does NOT contain: passport photos, names, addresses, document images
   Storage: IPFS (public, content-addressed)
-  Retrieval: direct fetch by CID — no CRE workflow needed
+  Retrieval: direct fetch by CID - no CRE workflow needed
   Integrity: on-chain auditHash (DON-signed, immutable)
 
 TYPE 2: KYC/AML identity data (PII)
@@ -23,7 +23,7 @@ TYPE 2: KYC/AML identity data (PII)
   Access: only authorized integrators, encrypted to their key
 ```
 
-This separation is intentional. Per-trade records are compliance decisions — not sensitive in the same way PII is. Identity data stays with the identity provider (Sumsub) and is only accessed on-demand through the TEE.
+This separation is intentional. Per-trade records are compliance decisions - not sensitive in the same way PII is. Identity data stays with the identity provider (Sumsub) and is only accessed on-demand through the TEE.
 
 ## Storage Architecture
 
@@ -39,7 +39,7 @@ ComplianceReport {
     sourceContract: address    // protocol that emitted the event (for auto-callback)
     approved:       bool       // the compliance decision
     riskScore:      uint8      // 0-10 scale
-    auditHash:      bytes32    // keccak256(full AuditRecord) — integrity anchor
+    auditHash:      bytes32    // keccak256(full AuditRecord) - integrity anchor
     ipfsCid:        string     // IPFS content identifier for the full AuditRecord
     timestamp:      uint256    // block timestamp
 }
@@ -51,14 +51,14 @@ Report metadata (verified by KeystoneForwarder):
 ```
 
 **Properties:**
-- Immutable — cannot be altered after writing
-- Public — anyone can read
-- Verifiable — DON threshold signature proves authenticity
-- Compact — decision + audit hash + IPFS CID, no PII
+- Immutable - cannot be altered after writing
+- Public - anyone can read
+- Verifiable - DON threshold signature proves authenticity
+- Compact - decision + audit hash + IPFS CID, no PII
 
 ### Layer 2: IPFS (full per-trade audit record)
 
-The complete AuditRecord is uploaded to IPFS via Pinata at trade time by CRE Workflow B. Stored publicly — integrity guaranteed by the on-chain auditHash.
+The complete AuditRecord is uploaded to IPFS via Pinata at trade time by CRE Workflow B. Stored publicly - integrity guaranteed by the on-chain auditHash.
 
 ```
 AuditRecord {
@@ -116,19 +116,19 @@ AuditRecord {
 ```
 
 **Why IPFS, not a database:**
-- No server to maintain or trust — consistent with the "no backend" philosophy
-- Content-addressed — the CID is derived from the content, tamper-evident by design
-- Pinata pins the data for availability — free tier sufficient for hackathon
-- Anyone with the CID can fetch — no API keys needed for reads
+- No server to maintain or trust - consistent with the "no backend" philosophy
+- Content-addressed - the CID is derived from the content, tamper-evident by design
+- Pinata pins the data for availability - free tier sufficient for hackathon
+- Anyone with the CID can fetch - no API keys needed for reads
 - On-chain auditHash provides a second integrity check independent of IPFS
 
 **Why not encrypted:**
-- The AuditRecord contains compliance decisions and risk scores — not PII
+- The AuditRecord contains compliance decisions and risk scores - not PII
 - No passport photos, names, addresses, or document images
-- The same level of sensitivity as a credit rating — public is acceptable
+- The same level of sensitivity as a credit rating - public is acceptable
 - PII lives in Sumsub and is accessed via CRE Workflow C (Confidential HTTP in TEE)
 
-### Layer 3: Sumsub (KYC/AML identity data — PII)
+### Layer 3: Sumsub (KYC/AML identity data - PII)
 
 PII never enters the audit trail. It stays in Sumsub and is accessed on-demand:
 
@@ -167,7 +167,7 @@ CRE Workflow B (TEE):
 
 ## How the Audit Trail is Retrieved
 
-### Per-Trade Audit Record (non-PII) — Direct IPFS Fetch
+### Per-Trade Audit Record (non-PII) - Direct IPFS Fetch
 
 No CRE workflow needed. Any integrator reads directly:
 
@@ -183,9 +183,9 @@ No CRE workflow needed. Any integrator reads directly:
    NO  → data was modified or corrupted, reject it
 ```
 
-**No API key, no authentication, no CRE workflow.** The data is public on IPFS. The on-chain hash proves it hasn't been tampered with. IPFS's content addressing provides a second layer — the CID itself is a hash of the content.
+**No API key, no authentication, no CRE workflow.** The data is public on IPFS. The on-chain hash proves it hasn't been tampered with. IPFS's content addressing provides a second layer - the CID itself is a hash of the content.
 
-### KYC/AML Identity Data (PII) — CRE Workflow C
+### KYC/AML Identity Data (PII) - CRE Workflow C
 
 PII requires scoped access through the TEE:
 
@@ -225,9 +225,9 @@ To tamper with an audit record, an attacker would need to:
 
 ## Role-Based Access
 
-### Per-Trade Audit Records (IPFS — public)
+### Per-Trade Audit Records (IPFS - public)
 
-Since per-trade records are on IPFS (public), any party can fetch them. The scoping is informational — the records contain `workspaceId` and `brokerAppId` fields that allow integrators to filter for their own data:
+Since per-trade records are on IPFS (public), any party can fetch them. The scoping is informational - the records contain `workspaceId` and `brokerAppId` fields that allow integrators to filter for their own data:
 
 ```
 Protocol: reads all records WHERE workspaceId matches their workspace
@@ -238,7 +238,7 @@ Regulator: reads any record (public data)
 
 The filtering happens client-side. The data is public, but each party knows which records are relevant to them via the embedded appIds.
 
-### KYC/AML Identity Data (Workflow C — scoped)
+### KYC/AML Identity Data (Workflow C - scoped)
 
 Identity data access is enforced server-side by CRE Workflow C:
 
@@ -280,31 +280,31 @@ No backend WebSocket server needed. The scoping data (`workspaceId`, `brokerAppI
 
 MiCA requires 5-year retention of all compliance actions:
 
-- **On-chain:** ComplianceReport is immutable and permanent — exists as long as the chain exists
+- **On-chain:** ComplianceReport is immutable and permanent - exists as long as the chain exists
 - **IPFS:** Pinata pinning keeps records available. For guaranteed permanence, records can also be mirrored to Arweave (content-addressed, permanent storage)
-- **Integrity:** On-chain auditHash ensures records remain unaltered over the full retention period — any modification is detectable
+- **Integrity:** On-chain auditHash ensures records remain unaltered over the full retention period - any modification is detectable
 
 ## Comparison: Fragmented vs Unified Audit
 
 | Scenario | Fragmented (today) | Unified (this engine) |
 |----------|-------------------|----------------------|
 | Regulator asks LP for compliance evidence | LP provides their partial view | LP points to on-chain report + IPFS record |
-| Regulator asks protocol for same trade | Protocol provides different partial view | Same record — identical data, same hash |
-| Do the records match? | Possibly not (different times, providers) | Always — one check, one record, one hash |
-| Can records be retroactively altered? | Yes (server-side DB) | No — on-chain hash + IPFS content addressing |
+| Regulator asks protocol for same trade | Protocol provides different partial view | Same record - identical data, same hash |
+| Do the records match? | Possibly not (different times, providers) | Always - one check, one record, one hash |
+| Can records be retroactively altered? | Yes (server-side DB) | No - on-chain hash + IPFS content addressing |
 | Time to produce audit evidence | Days (coordinate across parties) | Seconds (one chain read + one IPFS fetch) |
-| Where is PII? | Scattered across each party's systems | Sumsub only — accessed via TEE on demand |
+| Where is PII? | Scattered across each party's systems | Sumsub only - accessed via TEE on demand |
 
 ## Considerations
 
 ### Why not encrypt the IPFS records?
 
-The AuditRecord on IPFS contains compliance decisions and risk metrics — not PII. Encrypting it would require a CRE workflow for every read (to decrypt in TEE and re-encrypt for the requester), adding latency and complexity without proportional security benefit. PII (identity documents, sanctions details) stays in Sumsub and is accessed via Confidential HTTP in the TEE (Workflow C) where encryption genuinely matters.
+The AuditRecord on IPFS contains compliance decisions and risk metrics - not PII. Encrypting it would require a CRE workflow for every read (to decrypt in TEE and re-encrypt for the requester), adding latency and complexity without proportional security benefit. PII (identity documents, sanctions details) stays in Sumsub and is accessed via Confidential HTTP in the TEE (Workflow C) where encryption genuinely matters.
 
 ### What if Pinata goes down?
 
-The on-chain report still contains the compliance decision (`approved`, `riskScore`). The IPFS CID is content-addressed — the same data can be re-pinned to any IPFS node or gateway. For maximum resilience, records can be mirrored to Arweave (permanent, decentralized storage) at trade time.
+The on-chain report still contains the compliance decision (`approved`, `riskScore`). The IPFS CID is content-addressed - the same data can be re-pinned to any IPFS node or gateway. For maximum resilience, records can be mirrored to Arweave (permanent, decentralized storage) at trade time.
 
 ### What about Confidential Compute?
 
-Today, the AuditRecord is assembled in the WASM runtime on the CRE node (outside the TEE). Provider API calls (Sumsub, Chainalysis) happen inside the TEE via Confidential HTTP — secrets are protected, responses can be encrypted. When Chainlink Confidential Compute ships (2026), the entire workflow — including AuditRecord assembly — moves into the TEE. Same code, stronger guarantee. The architecture is forward-compatible.
+Today, the AuditRecord is assembled in the WASM runtime on the CRE node (outside the TEE). Provider API calls (Sumsub, Chainalysis) happen inside the TEE via Confidential HTTP - secrets are protected, responses can be encrypted. When Chainlink Confidential Compute ships (2026), the entire workflow - including AuditRecord assembly - moves into the TEE. Same code, stronger guarantee. The architecture is forward-compatible.

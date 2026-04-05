@@ -24,7 +24,7 @@ What CRE actually gives you (honest version)
 Let me go through each claimed benefit and be ruthless about which ones are
 real:
 
-"Verifiable execution" — REAL but niche
+"Verifiable execution" - REAL but niche
 
 Centralized:
 You COULD selectively approve/reject trades
@@ -47,7 +47,7 @@ customers are crypto-native and ideologically
 prefer trustless systems. A SOC2 audit achieves
 similar trust for traditional customers.
 
-"Credential security (TEE)" — REAL
+"Credential security (TEE)" - REAL
 
 Centralized:
 Your devops team sees API keys in env vars
@@ -56,7 +56,7 @@ Server compromise = all credentials exposed
 
 CRE:
 Credentials in Vault DON, decrypted only in TEE
-Nobody — including you — can extract them
+Nobody - including you - can extract them
 
 VERDICT: Genuinely stronger credential security.
 But... Sumsub runs billions of verifications with
@@ -64,7 +64,7 @@ centralized credential storage and they haven't
 been compromised. So this is real but not a
 dealbreaker for most customers.
 
-"Censorship resistance" — REAL but double-edged
+"Censorship resistance" - REAL but double-edged
 
 Centralized:
 You can shut down service to anyone, anytime
@@ -81,7 +81,7 @@ you need to comply immediately. Censorship
 resistance is a feature for money, but a BUG
 for compliance.
 
-"Whitelabel for other protocols" — THIS is where it matters
+"Whitelabel for other protocols" - THIS is where it matters
 
 Centralized whitelabel:
 "Use my compliance API"
@@ -107,7 +107,7 @@ Not because centralized CAN'T work, but because the
 trust story is stronger when you're asking strangers
 to depend on your infrastructure.
 
-"I don't want PII liability" — PARTIALLY real
+"I don't want PII liability" - PARTIALLY real
 
 Centralized:
 You process PII on your server
@@ -184,7 +184,7 @@ to update the workflow (new ID, visible on-chain),
 get the consumer contract updated (visible on-chain),
 and do all this publicly.
 
-This is "self-binding" — you're removing your own
+This is "self-binding" - you're removing your own
 ability to cheat. This is valuable because:
 → It makes your pitch stronger ("we CAN'T cheat")
 → It reduces your legal risk ("we COULDN'T have cheated")
@@ -233,8 +233,8 @@ The honest summary
 
 You're right that centralized works. The question isn't "can I?" but "what's
 my target customer and what do they value?" If it's DeFi protocols with LPs
-who don't trust the operator — CRE's verifiability is a real moat. If it's
-traditional institutions who trust legal agreements — centralized ships faster
+who don't trust the operator - CRE's verifiability is a real moat. If it's
+traditional institutions who trust legal agreements - centralized ships faster
 and they won't care about DON consensus.
 
 The self-binding argument is the one I'd push hardest. It's not "CRE is better

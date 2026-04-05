@@ -1,4 +1,4 @@
-# 08 — Trust Model & Verification
+# 08 - Trust Model & Verification
 
 ## What CRE Cryptographically Guarantees
 
@@ -41,7 +41,7 @@ Layer 6: AUDIT HASH
 ### What This Proves
 
 - The Chainlink DON (21 independent nodes) reached consensus that the compliance result is `approved: true`
-- The report is signed by a threshold signature — on-chain contracts can verify it came from the DON
+- The report is signed by a threshold signature - on-chain contracts can verify it came from the DON
 - The workflow that produced the report matches a specific, verifiable binary hash
 - The off-chain audit record matches the on-chain hash (integrity proof)
 - The provider credentials never left the TEE (hardware isolation)
@@ -50,7 +50,7 @@ Layer 6: AUDIT HASH
 
 - It does NOT prove that Sumsub's server specifically returned "verified" (no ZK proof of the TLS session)
 - It does NOT prove the HTTP interaction happened with the real Sumsub API (no TLS attestation)
-- The trust model is: **"Trust the Chainlink DON honest majority"** — if ≥ 2/3 of nodes are honest, the result is correct
+- The trust model is: **"Trust the Chainlink DON honest majority"** - if ≥ 2/3 of nodes are honest, the result is correct
 
 However: if the workflow code is open source and the workflow ID matches, the only code path to `approved: true` goes through the actual Sumsub/Chainalysis APIs. This is a **logical proof by code transparency**, not a cryptographic proof of the HTTP call.
 
@@ -121,13 +121,13 @@ Provider credentials (Sumsub App Token, Chainalysis API Key, etc.) are stored in
 
 Confidential Compute (Early Access 2026) is the target for production deployment. With it, PII from provider responses exists only in enclave memory for milliseconds and is never accessible to node operators.
 
-## DECO — Future Enhancement (ZK + TLS Attestation)
+## DECO - Future Enhancement (ZK + TLS Attestation)
 
 Chainlink DECO is a privacy-preserving protocol that uses zero-knowledge proofs on TLS session data. When integrated into CRE (planned for 2026):
 
 - **ZK proof** that a TLS session occurred with a specific server (e.g., `api.sumsub.com`)
 - **Mathematical guarantee** that the response contained specific data (e.g., `status: "active"`)
-- **Privacy-preserving:** the full response is never revealed — only the proven property
+- **Privacy-preserving:** the full response is never revealed - only the proven property
 - **No trust assumption needed** for the HTTP part (pure math, not honest majority)
 
 With DECO, the trust model upgrades from:
@@ -145,10 +145,10 @@ Same workflow code. Same architecture. Stronger cryptographic guarantees. No cod
 
 | Trust Level | Architecture | Trust Assumption | Verifiable? |
 |---|---|---|---|
-| Weakest | Your centralized backend | "Trust one server operator" | No — trust the operator |
+| Weakest | Your centralized backend | "Trust one server operator" | No - trust the operator |
 | Stronger | Backend + SOC2 audit | "Trust the operator + auditor" | Annually, not per-trade |
-| Stronger | CRE (current) | "Trust ≥ 2/3 of 21 DON nodes" | Yes — per-trade, on-chain |
-| Strongest | CRE + DECO (future) | "Trust math (ZK proofs)" | Yes — cryptographic proof |
+| Stronger | CRE (current) | "Trust ≥ 2/3 of 21 DON nodes" | Yes - per-trade, on-chain |
+| Strongest | CRE + DECO (future) | "Trust math (ZK proofs)" | Yes - cryptographic proof |
 
 ## The Self-Binding Property
 
@@ -159,7 +159,7 @@ Building on CRE with open-source code and pinned workflow IDs creates a **self-b
 - The consumer contract rejects unknown workflow IDs
 - All parties see the same rules applied equally
 
-This is structurally different from a centralized system where the operator promises not to cheat. Here, the operator has **removed their own ability to cheat** — and anyone can verify this by reading the on-chain configuration and the open-source code.
+This is structurally different from a centralized system where the operator promises not to cheat. Here, the operator has **removed their own ability to cheat** - and anyone can verify this by reading the on-chain configuration and the open-source code.
 
 ## PII and Data Processing
 
@@ -179,4 +179,4 @@ This is structurally different from a centralized system where the operator prom
 - The protocol operator needs DPAs with integrators (standard for any compliance service)
 - With Confidential Compute, PII processing happens in hardware-isolated enclaves
 - The operator holds the Sumsub master account (with restricted dashboard role for non-PII admin tasks, or full access if running the compliance engine actively)
-- On-chain data contains no PII — only compliance decisions and audit hashes
+- On-chain data contains no PII - only compliance decisions and audit hashes

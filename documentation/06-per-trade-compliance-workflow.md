@@ -1,4 +1,4 @@
-# 06 — Per-Trade Compliance Workflow
+# 06 - Per-Trade Compliance Workflow
 
 ## Overview
 
@@ -52,7 +52,7 @@ requiresEDD: true | false
 
 ---
 
-### Check 2: Sanctions Screening — Person
+### Check 2: Sanctions Screening - Person
 
 **Provider:** Sumsub (Confidential HTTP)
 
@@ -91,7 +91,7 @@ riskCategory: "none" | "low" | "medium" | "high"
 
 ---
 
-### Check 4: Wallet Risk Scoring — Trader
+### Check 4: Wallet Risk Scoring - Trader
 
 **Provider:** Chainalysis (Confidential HTTP)
 
@@ -126,7 +126,7 @@ entityAttribution: "none" | "exchange" | "known_entity"
 
 ---
 
-### Check 5: Wallet Risk Scoring — Counterparty
+### Check 5: Wallet Risk Scoring - Counterparty
 
 **Provider:** Chainalysis (Confidential HTTP)
 
