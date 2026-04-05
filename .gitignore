@@ -1,19 +1,35 @@
 # Environment / secrets
 *.env
 .env*
+secrets.yaml
 
 # Dependencies
 node_modules/
+package-lock.json
 
 # Build artifacts
 dist/
 out/
 cache/
+target/
 
 # Foundry
 contracts/cache/
 contracts/out/
 contracts/broadcast/
+contracts/node_modules/
+contracts/package-lock.json
+
+# CRE
+*.wasm
+.cre_build_tmp.js
+
+# Claude Code / tooling
+.claude/
+.agents/
+.playwright-mcp/
+.tmp/
+skills-lock.json
 
 # OS
 .DS_Store
@@ -21,6 +37,11 @@ contracts/broadcast/
 # IDE
 .vscode/
 .idea/
+*.swp
+*.swo
 
-# CRE
-*.wasm
+# Backups
+*.bak
+
+# Misc
+documentation/claude-code-chat.txt
