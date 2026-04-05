@@ -2,7 +2,7 @@ import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { type Address } from "viem";
 import { PORT } from "./config";
-import { isVerified, getIntegrator } from "./chain";
+import { isVerified, getIntegrator, issueCredential } from "./chain";
 import { generateToken, verifyIdentity, checkTradeCompliance, auditIdentity } from "./cre";
 
 const app = new Hono();
@@ -67,7 +67,12 @@ app.post("/api/kyc/verify", async (c) => {
   if (!body.wallet) return c.json({ error: "wallet is required" }, 400);
 
   try {
+    // CRE Workflow A with --broadcast:
+    // 1. Pulls Sumsub status via Confidential HTTP
+    // 2. Checks Chainalysis via Confidential HTTP
+    // 3. If GREEN: writeReport() writes credential on-chain (--broadcast flag)
     const result = await verifyIdentity(body.wallet);
+
     return c.json(result);
   } catch (err: any) {
     console.error("[/api/kyc/verify] Error:", err.message);
@@ -125,16 +130,21 @@ app.post("/api/compliance/check", async (c) => {
   const body = await c.req.json<{ txHash: string; eventIndex?: number }>();
   if (!body.txHash) return c.json({ error: "txHash is required" }, 400);
 
-  try {
-    const result = await checkTradeCompliance(body.txHash, body.eventIndex ?? 0);
-    return c.json(result);
-  } catch (err: any) {
-    console.error("[/api/compliance/check] Error:", err.message);
-    return c.json(
-      { error: "Compliance check failed", details: err.message?.slice(0, 200) },
-      500
-    );
+  // Try event indices 0-3 (fillOrderAsync emits Transfer before ComplianceCheckRequested)
+  let lastError = "";
+  for (const idx of [0, 1, 2, 3]) {
+    try {
+      const result = await checkTradeCompliance(body.txHash, body.eventIndex ?? idx);
+      if (result.tradeId || result.approved !== undefined) {
+        return c.json(result);
+      }
+    } catch (err: any) {
+      lastError = err.message?.slice(0, 100) || "unknown";
+      console.log(`[/api/compliance/check] Event index ${idx} failed, trying next...`);
+    }
   }
+  console.error("[/api/compliance/check] All event indices failed:", lastError);
+  return c.json({ error: "Compliance check failed", details: lastError }, 500);
 });
 
 // ---------------------------------------------------------------------------

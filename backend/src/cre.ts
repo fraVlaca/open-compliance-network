@@ -35,6 +35,7 @@ async function triggerWorkflow(
     "--trigger-index",
     "0",
     "--skip-type-checks",
+    "--broadcast",
     "-T",
     "staging-settings",
   ].join(" ");
@@ -114,6 +115,7 @@ export async function checkTradeCompliance(txHash: string, eventIndex: number = 
     "--trigger-index",
     "0",
     "--skip-type-checks",
+    "--broadcast",
     "-T",
     "staging-settings",
   ].join(" ");
