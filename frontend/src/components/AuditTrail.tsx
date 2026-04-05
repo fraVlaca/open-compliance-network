@@ -35,10 +35,10 @@ function ReportDetail({ tradeId, event }: { tradeId: Hex; event: ReportEvent }) 
     !report ||
     !report.trader ||
     report.trader === "0x0000000000000000000000000000000000000000";
-  const trader = (!isEmptyReport && report.trader) || event?.trader || "—";
-  const counterparty = (!isEmptyReport && report.counterparty) || "—";
-  const sourceContract = (!isEmptyReport && report.sourceContract) || "—";
-  const auditHash = (!isEmptyReport && report.auditHash) || event?.auditHash || "—";
+  const trader = (!isEmptyReport && report.trader) || event?.trader || "-";
+  const counterparty = (!isEmptyReport && report.counterparty) || "-";
+  const sourceContract = (!isEmptyReport && report.sourceContract) || "-";
+  const auditHash = (!isEmptyReport && report.auditHash) || event?.auditHash || "-";
   const ipfsCid = (!isEmptyReport && report.ipfsCid) || "";
   const timestamp = !isEmptyReport ? report.timestamp : undefined;
 
@@ -71,7 +71,7 @@ function ReportDetail({ tradeId, event }: { tradeId: Hex; event: ReportEvent }) 
       <div>
         <span className="text-gray-500">Timestamp:</span>{" "}
         <span className="text-gray-300">
-          {timestamp ? new Date(Number(timestamp) * 1000).toLocaleString() : "—"}
+          {timestamp ? new Date(Number(timestamp) * 1000).toLocaleString() : "-"}
         </span>
       </div>
       <div className="col-span-2">
@@ -141,7 +141,7 @@ export default function AuditTrail() {
               trader: l.args.trader as string,
               approved: l.args.approved as boolean,
               riskScore: Number(l.args.riskScore ?? 0),
-              auditHash: (l.args.auditHash as string) ?? "—",
+              auditHash: (l.args.auditHash as string) ?? "-",
             }))
             .reverse()
         );

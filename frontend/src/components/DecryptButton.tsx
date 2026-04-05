@@ -20,7 +20,7 @@ export default function DecryptButton({ encryptedHex }: DecryptButtonProps) {
   const handleDecrypt = async () => {
     if (!address) return;
 
-    // Step 1: Wallet signature — proves ownership & authorizes decryption
+    // Step 1: Wallet signature - proves ownership & authorizes decryption
     setState("signing");
     try {
       const sig = await signMessageAsync({ message: SIGN_MESSAGE });
@@ -33,7 +33,7 @@ export default function DecryptButton({ encryptedHex }: DecryptButtonProps) {
       setState("done");
     } catch (err: any) {
       if (err.name === "UserRejectedRequestError" || err.message?.includes("User rejected")) {
-        setErrorMsg("Wallet signature rejected — decryption cancelled");
+        setErrorMsg("Wallet signature rejected - decryption cancelled");
       } else {
         setErrorMsg(err.message || "Decryption failed");
       }

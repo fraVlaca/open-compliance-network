@@ -40,7 +40,7 @@ export default function ProtocolMetrics() {
         setTrades(tradeLogs.length);
         setIntegrators(intLogs.length);
       } catch {
-        // Silently fail — metrics are nice-to-have
+        // Silently fail - metrics are nice-to-have
       }
     }
 
