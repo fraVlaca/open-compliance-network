@@ -63,7 +63,7 @@ export async function decryptIdentity(encryptedHex: string): Promise<Record<stri
       const text = await tryAesGcmDecrypt(raw, keyHex);
       return JSON.parse(text);
     } catch {
-      // AES-GCM failed — likely simulation mode where encryptOutput
+      // AES-GCM failed - likely simulation mode where encryptOutput
       // doesn't produce real ciphertext. Fall through to raw parse.
     }
   }
@@ -84,6 +84,6 @@ export async function decryptIdentity(encryptedHex: string): Promise<Record<stri
   }
 
   throw new Error(
-    "Could not decrypt — data may not be AES-GCM encrypted (common in CRE simulation mode)"
+    "Could not decrypt - data may not be AES-GCM encrypted (common in CRE simulation mode)"
   );
 }

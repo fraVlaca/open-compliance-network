@@ -25,6 +25,6 @@ export const arcTestnet = defineChain({
 
 export const wagmiConfig = getDefaultConfig({
   appName: "Open Compliance Layer",
-  projectId: "demo", // WalletConnect project ID — replace for production
+  projectId: "demo", // WalletConnect project ID - replace for production
   chains: [arcTestnet],
 });

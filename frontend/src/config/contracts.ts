@@ -20,7 +20,7 @@ export const CONTRACTS = {
 export const DEMO_WORKSPACE_ID =
   "0x411f25477da9ba485ac107949d92fd4786f058bc1a91e6a52a2b5e48fd433123";
 
-// ABIs (minimal — only the functions we call from the frontend)
+// ABIs (minimal - only the functions we call from the frontend)
 export const INTEGRATOR_REGISTRY_ABI = [
   {
     name: "createWorkspace",
@@ -270,5 +270,5 @@ export const REPORT_CONSUMER_SIMULATE_ABI = [
   },
 ] as const;
 
-// Simulation mode flag — set to true for hackathon demo without CRE deploy access
+// Simulation mode flag - set to true for hackathon demo without CRE deploy access
 export const SIMULATE_MODE = true;
