@@ -26,16 +26,20 @@
   "kyc:default": {
     "dimensions": {
       "teeContainer": {
-        "width": 248,
-        "height": 277
+        "width": 441,
+        "height": 391
+      },
+      "arcContainer": {
+        "width": 503,
+        "height": 299
       }
     }
   },
   "audit:default": {
     "dimensions": {
       "teeLeft": {
-        "width": 255,
-        "height": 263
+        "width": 332,
+        "height": 253
       },
       "arcLeft": {
         "width": 215,

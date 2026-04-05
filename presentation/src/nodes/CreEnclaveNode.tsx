@@ -39,7 +39,7 @@ export default function CreEnclaveNode({ data }: NodeProps) {
       <div className="px-3 py-1.5 flex items-center gap-2" style={{ backgroundColor: 'rgba(139, 92, 246, 0.08)' }}>
         <Lock className="w-3 h-3 text-tee-400" />
         <span className="text-xs font-mono font-semibold tracking-wider text-tee-400">
-          {label || 'CRE Enclave'}
+          {label || 'CRE'}
         </span>
         <span className="text-[9px] font-mono text-tee-600 ml-auto">Chainlink DON · 21 nodes</span>
       </div>

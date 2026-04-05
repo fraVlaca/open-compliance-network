@@ -1,12 +1,12 @@
 import { Handle, Position } from '@xyflow/react'
 import type { NodeProps } from '@xyflow/react'
 import { motion } from 'motion/react'
-import { User, Building, Landmark, Vault, Scale, Monitor } from 'lucide-react'
+import { User, Building, Landmark, Vault, Scale, Monitor, Server } from 'lucide-react'
 import type { NodeState } from '../types'
 
 export interface ActorNodeData {
   label: string
-  role: 'user' | 'broker' | 'lp' | 'custodian' | 'regulator' | 'frontend'
+  role: 'user' | 'broker' | 'lp' | 'custodian' | 'regulator' | 'frontend' | 'backend'
   state: NodeState
   [key: string]: unknown
 }
@@ -18,6 +18,7 @@ const roleIcons: Record<string, React.ComponentType<{ className?: string }>> = {
   custodian: Vault,
   regulator: Scale,
   frontend: Monitor,
+  backend: Server,
 }
 
 export default function ActorNode({ data }: NodeProps) {
