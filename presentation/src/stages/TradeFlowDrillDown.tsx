@@ -33,6 +33,7 @@ const sidePanels: Record<string, SidePanelData> = {
         'Chainalysis (counterparty)': 'Counterparty wallet risk',
       },
       'Rules engine (open source)': { 'Jurisdiction': 'MiCA: DE → allowed', 'Asset': 'USDC → eligible', 'Threshold': 'Below EDD limit', 'Structuring': 'No pattern detected' },
+      'Structuring detection': 'Cross-reference trade patterns to detect threshold evasion',
     },
     highlightFields: ['Parallel checks', 'Rules engine (open source)'],
   },
@@ -41,7 +42,7 @@ const sidePanels: Record<string, SidePanelData> = {
     json: {
       'ComplianceReport (on-chain)': { tradeId: '0xabc...', trader: '0xUser', counterparty: '0xLP', sourceContract: '0xSwap', approved: true, riskScore: 2, auditHash: '0x9f2e...', ipfsCid: 'QmXyz...' },
       'IPFS': 'Full AuditRecord uploaded via Pinata — content-addressed',
-      'Auto-callback': 'ReportConsumer.onReport() → onComplianceApproved(tradeId) → trade executes',
+      'Auto-callback': 'ComplianceReportConsumer.onReport() → onComplianceApproved(tradeId) or onComplianceRejected(tradeId, reason)',
       'Result': 'One user tx → CRE checks → DON consensus → auto-callback → trade done',
     },
     highlightFields: ['Auto-callback', 'Result'],
@@ -62,8 +63,9 @@ function buildTradeSequence(): StageSequence {
     { delay: 400, apply: (s: FlowState) => ({ edgeStates: { ...s.edgeStates, 'cre-rules': 'completed' as EdgeState }, nodeStates: { ...s.nodeStates, rules: 'active' as NodeState } }) },
     { delay: 800, apply: (s: FlowState) => ({ nodeStates: { ...s.nodeStates, rules: 'completed' as NodeState } }) },
     { delay: 400, sidePanel: sidePanels.report, apply: (s: FlowState) => ({ edgeStates: { ...s.edgeStates, 'cre-report': 'active' as EdgeState, 'cre-ipfs': 'active' as EdgeState } }) },
-    { delay: 600, apply: (s: FlowState) => ({ edgeStates: { ...s.edgeStates, 'cre-report': 'completed' as EdgeState, 'cre-ipfs': 'completed' as EdgeState }, nodeStates: { ...s.nodeStates, report: 'active' as NodeState, ipfs: 'active' as NodeState } }) },
-    { delay: 500, apply: (s: FlowState) => ({ nodeStates: { ...s.nodeStates, report: 'completed' as NodeState, ipfs: 'completed' as NodeState } }) },
+    { delay: 600, apply: (s: FlowState) => ({ edgeStates: { ...s.edgeStates, 'cre-report': 'completed' as EdgeState, 'cre-ipfs': 'completed' as EdgeState }, nodeStates: { ...s.nodeStates, forwarder: 'active' as NodeState, ipfs: 'active' as NodeState } }) },
+    { delay: 400, apply: (s: FlowState) => ({ nodeStates: { ...s.nodeStates, forwarder: 'completed' as NodeState, ipfs: 'completed' as NodeState }, edgeStates: { ...s.edgeStates, 'forwarder-report': 'active' as EdgeState } }) },
+    { delay: 400, apply: (s: FlowState) => ({ edgeStates: { ...s.edgeStates, 'forwarder-report': 'completed' as EdgeState }, nodeStates: { ...s.nodeStates, report: 'active' as NodeState } }) },
     { delay: 400, apply: (s: FlowState) => ({ edgeStates: { ...s.edgeStates, 'report-protocol': 'active' as EdgeState } }) },
     { delay: 600, apply: (s: FlowState) => ({ edgeStates: { ...s.edgeStates, 'report-protocol': 'completed' as EdgeState }, nodeStates: { ...s.nodeStates, protocol: 'active' as NodeState } }) },
     { delay: 800, apply: (s: FlowState) => ({ nodeStates: { ...s.nodeStates, cre: 'completed' as NodeState, teeContainer: 'completed' as NodeState, protocol: 'completed' as NodeState } }) },
@@ -81,7 +83,7 @@ export default function TradeFlowDrillDown() {
     // --- CRE / TEE container ---
     { id: 'teeContainer', type: 'creEnclaveNode', position: { x: 300, y: 0 },
       style: { zIndex: -1, width: 530, height: 420 },
-      data: { label: 'CRE Enclave — Workflow B', state: nodeStates.teeContainer || 'idle' },
+      data: { label: 'CRE', state: nodeStates.teeContainer || 'idle' },
       draggable: false, selectable: false },
 
     // --- Arc container ---
@@ -97,10 +99,13 @@ export default function TradeFlowDrillDown() {
 
     // --- On-chain (Arc) ---
     { id: 'swap', type: 'contractNode', position: { x: 140, y: 100 },
-      data: { label: 'Swap Contract', description: 'emit ComplianceCheckRequested', state: nodeStates.swap || 'idle' },
+      data: { label: 'EscrowSwap', description: 'emit ComplianceCheckRequested', state: nodeStates.swap || 'idle' },
+      draggable: false, selectable: false },
+    { id: 'forwarder', type: 'contractNode', position: { x: 30, y: 300 },
+      data: { label: 'KeystoneForwarder', description: 'verifies DON signature', state: nodeStates.forwarder || 'idle' },
       draggable: false, selectable: false },
     { id: 'report', type: 'contractNode', position: { x: 30, y: 370 },
-      data: { label: 'ReportConsumer', description: 'Stores report + auto-callback', state: nodeStates.report || 'idle', complianceResult: 'approved' },
+      data: { label: 'ComplianceReportConsumer', description: 'approves/rejects', state: nodeStates.report || 'idle', complianceResult: 'approved' },
       draggable: false, selectable: false },
     { id: 'protocol', type: 'contractNode', position: { x: 30, y: 490 },
       data: { label: 'Swap Protocol', description: 'onComplianceApproved(tradeId)', state: nodeStates.protocol || 'idle', complianceResult: 'approved' },
@@ -108,7 +113,7 @@ export default function TradeFlowDrillDown() {
 
     // --- Inside TEE ---
     { id: 'cre', type: 'workflowNode', position: { x: 330, y: 60 },
-      data: { label: 'Workflow B', description: 'Per-Trade Compliance', state: nodeStates.cre || 'idle', checks: ['Sumsub KYC', 'Chainalysis (trader)', 'Chainalysis (counterparty)', 'Jurisdiction rules', 'Aggregate decision'] },
+      data: { label: 'Workflow B', description: 'Per-Trade Compliance', state: nodeStates.cre || 'idle', checks: ['Sumsub KYC + sanctions + PEP', 'Chainalysis (trader)', 'Chainalysis (counterparty)', 'Jurisdiction rules', 'Structuring detection', 'Aggregate decision'] },
       draggable: false, selectable: false },
     { id: 'sumsub', type: 'providerNode', position: { x: 610, y: 30 },
       data: { label: 'Sumsub', provider: 'sumsub', state: nodeStates.sumsub || 'idle' },
@@ -138,7 +143,8 @@ export default function TradeFlowDrillDown() {
     { id: 'cre-ch-trader', source: 'cre', target: 'chTrader', type: 'confidentialEdge', data: { state: edgeStates['cre-ch-trader'] || 'idle', label: 'Confidential HTTP (TEE)' } },
     { id: 'cre-ch-counter', source: 'cre', target: 'chCounter', type: 'confidentialEdge', data: { state: edgeStates['cre-ch-counter'] || 'idle', label: 'Confidential HTTP (TEE)' } },
     { id: 'cre-rules', source: 'cre', target: 'rules', type: 'dataFlowEdge', data: { state: edgeStates['cre-rules'] || 'idle' } },
-    { id: 'cre-report', source: 'cre', sourceHandle: 'bottom', target: 'report', targetHandle: 'top', type: 'onChainEdge', data: { state: edgeStates['cre-report'] || 'idle', label: 'writeReport()' } },
+    { id: 'cre-report', source: 'cre', sourceHandle: 'bottom', target: 'forwarder', targetHandle: 'top', type: 'onChainEdge', data: { state: edgeStates['cre-report'] || 'idle', label: 'writeReport()' } },
+    { id: 'forwarder-report', source: 'forwarder', sourceHandle: 'bottom', target: 'report', targetHandle: 'top', type: 'dataFlowEdge', data: { state: edgeStates['forwarder-report'] || 'idle', label: 'onReport()' } },
     { id: 'cre-ipfs', source: 'cre', sourceHandle: 'bottom', target: 'ipfs', targetHandle: 'top', type: 'dataFlowEdge', data: { state: edgeStates['cre-ipfs'] || 'idle', label: 'AuditRecord' } },
     { id: 'report-protocol', source: 'report', sourceHandle: 'bottom', target: 'protocol', targetHandle: 'top', type: 'callbackEdge', data: { state: edgeStates['report-protocol'] || 'idle', label: 'onComplianceApproved(tradeId)' } },
   ], [edgeStates])

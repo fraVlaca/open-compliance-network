@@ -37,7 +37,7 @@ export default function SummaryStage() {
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.4, duration: 0.6 }} className="grid grid-cols-4 gap-4 mb-10">
           {[
             { label: 'Integration', value: '1 line', sub: 'require(isVerified(wallet))' },
-            { label: 'Compliance Providers', value: '3', sub: 'Sumsub + Chainalysis + Notabene' },
+            { label: 'Compliance Providers', value: '2+1', sub: 'Sumsub + Chainalysis (Notabene planned)' },
             { label: 'Trust Model', value: '21 nodes', sub: 'BFT consensus + CRE enclave' },
             { label: 'Protocol PII', value: 'Zero', sub: 'Never held, never processed' },
           ].map((metric, i) => (

@@ -28,14 +28,14 @@ const overviewSidePanel = {
   json: {
     'The problem': 'DeFi protocols can\'t add KYC without destroying decentralization (the compliance catch-22)',
     'The solution': 'A compliance oracle — protocols read attestations like Chainlink price feeds. They never touch PII, never run KYC infrastructure, never become regulated entities.',
-    'How it works': 'CRE workflows → Sumsub + Chainalysis → on-chain credential + IPFS audit trail',
+    'How it works': 'CRE Workflow D (token) + A (verify) → Sumsub + Chainalysis → on-chain credential + IPFS audit trail',
     'Integration': {
       'Simplest': 'require(consumer.isVerified(wallet))  // 1 line of Solidity',
       'ACE': 'function trade() external runPolicy { }',
       'Async': 'emit ComplianceCheckRequested(...)  // CRE auto-callbacks',
     },
     'Deployed on': 'Arc Testnet (Circle) — USDC-native, institutional-first',
-    'Providers': ['Sumsub (KYC/AML/Sanctions)', 'Chainalysis (wallet risk/exposure)', 'Notabene (Travel Rule)'],
+    'Providers': ['Sumsub (KYC/AML/Sanctions)', 'Chainalysis (wallet risk/exposure)', 'Notabene (Travel Rule — planned July 2026)'],
   },
   highlightFields: ['The problem', 'The solution', 'Integration'],
 }
