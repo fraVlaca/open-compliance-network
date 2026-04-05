@@ -31,6 +31,7 @@ import {
   encodeFunctionData,
   decodeFunctionResult,
   decodeAbiParameters,
+  getAddress,
   type Address,
   type Hex,
 } from "viem";
@@ -45,6 +46,7 @@ const configSchema = z.object({
   sumsubApiUrl: z.string(),
   sumsubSecretKey: z.string(),
   chainalysisApiUrl: z.string(),
+  credentialConsumerAddress: z.string(),
   reportConsumerAddress: z.string(),
   integratorRegistryAddress: z.string(),
   identityRegistryAddress: z.string(),
@@ -121,10 +123,12 @@ function checkSumsub(client: ConfidentialHTTPClient, runtime: Runtime<Config>, w
   const hmacSig = sumsubSign(runtime.config.sumsubSecretKey, ts, "GET", path);
   const resp = confSumsubGet(client, runtime, `${runtime.config.sumsubApiUrl}${path}`, hmacSig, ts);
 
+  runtime.log(`checkSumsub: status=${resp.statusCode}, body=${respText(resp).slice(0, 200)}`);
   if (resp.statusCode !== 200) {
     return { reviewStatus: "not_found", reviewAnswer: "NONE", sanctionsHit: false, pepStatus: false, jurisdiction: "UNKNOWN" };
   }
   const data = JSON.parse(respText(resp));
+  runtime.log(`checkSumsub: reviewStatus=${data.review?.reviewStatus}, reviewAnswer=${data.review?.reviewResult?.reviewAnswer}`);
   return {
     reviewStatus: data.review?.reviewStatus ?? "unknown",
     reviewAnswer: data.review?.reviewResult?.reviewAnswer ?? "NONE",
@@ -172,7 +176,7 @@ const onLogTrigger = (runtime: Runtime<Config>, log: any): string => {
   // Log fields are Uint8Array — convert to hex with bytesToHex
   const tradeId = bytesToHex(log.topics[1]) as Hex;
   const traderTopic = bytesToHex(log.topics[2]) as Hex;
-  const trader = ("0x" + traderTopic.slice(26)) as Address;
+  const trader = getAddress("0x" + traderTopic.slice(26)) as Address;
   const sourceContract = bytesToHex(log.address) as Address;
   const dataHex = bytesToHex(log.data) as Hex;
   const [counterparty, asset, amount] = decodeAbiParameters(
@@ -187,18 +191,28 @@ const onLogTrigger = (runtime: Runtime<Config>, log: any): string => {
   const confHTTP = new ConfidentialHTTPClient();
   const now = runtime.now();
 
-  // 1. Read IntegratorRegistry
+  // 1. Read IntegratorRegistry for the TRADER (not sourceContract)
+  // The trader's registration has the correct workspaceId for Sumsub externalUserId lookup
   let workspaceId: Hex = keccak256(toHex("default"));
   try {
     const regResult = evmClient.callContract(runtime, {
-      call: encodeCallMsg({ from: "0x0000000000000000000000000000000000000000" as Address, to: runtime.config.integratorRegistryAddress as Address, data: encodeFunctionData({ abi: REGISTRY_ABI, functionName: "getIntegrator", args: [sourceContract] }) }),
+      call: encodeCallMsg({ from: "0x0000000000000000000000000000000000000000" as Address, to: runtime.config.integratorRegistryAddress as Address, data: encodeFunctionData({ abi: REGISTRY_ABI, functionName: "getIntegrator", args: [trader] }) }),
     }).result();
     const decoded = decodeFunctionResult({ abi: REGISTRY_ABI, functionName: "getIntegrator", data: bytesToHex(regResult.data) as Hex }) as [Hex, Hex, number, boolean];
-    workspaceId = decoded[1];
+    if (decoded[3]) { workspaceId = decoded[1]; }
   } catch { runtime.log("IntegratorRegistry lookup failed — using defaults"); }
 
-  // 2. Read trader's brokerAppId from credential
-  let brokerAppId: Hex = keccak256(toHex("unknown-broker"));
+  // 2. Read trader's brokerAppId — first try IntegratorRegistry, then credential
+  // Use the trader's own appId from IntegratorRegistry as the primary source
+  // This matches what Workflow D used when creating the Sumsub applicant
+  let brokerAppId: Hex = keccak256(toHex("self-onboard"));
+  try {
+    const traderRegResult = evmClient.callContract(runtime, {
+      call: encodeCallMsg({ from: "0x0000000000000000000000000000000000000000" as Address, to: runtime.config.integratorRegistryAddress as Address, data: encodeFunctionData({ abi: REGISTRY_ABI, functionName: "getIntegrator", args: [trader] }) }),
+    }).result();
+    const traderReg = decodeFunctionResult({ abi: REGISTRY_ABI, functionName: "getIntegrator", data: bytesToHex(traderRegResult.data) as Hex }) as [Hex, Hex, number, boolean];
+    if (traderReg[3]) { brokerAppId = traderReg[0]; }
+  } catch { runtime.log("Trader IntegratorRegistry lookup failed"); }
   try {
     const idResult = evmClient.callContract(runtime, {
       call: encodeCallMsg({ from: "0x0000000000000000000000000000000000000000" as Address, to: runtime.config.identityRegistryAddress as Address, data: encodeFunctionData({ abi: IDENTITY_ABI, functionName: "getIdentity", args: [trader] }) }),
@@ -211,10 +225,15 @@ const onLogTrigger = (runtime: Runtime<Config>, log: any): string => {
       const [, credData] = decodeFunctionResult({ abi: CREDENTIAL_ABI, functionName: "getCredential", data: bytesToHex(credResult.data) as Hex }) as [number, Hex];
       const decoded = decodeAbiParameters(parseAbiParameters("uint8, uint8, string, bytes32, bytes32"), credData);
       brokerAppId = decoded[3] as Hex;
+      // Also get workspaceId from credential if IntegratorRegistry lookup used defaults
+      if (workspaceId === keccak256(toHex("default")) && decoded[4]) {
+        workspaceId = decoded[4] as Hex;
+      }
     }
   } catch { runtime.log("Credential lookup failed — using default brokerAppId"); }
 
   // 3-4. Provider checks via Confidential HTTP
+  runtime.log(`Sumsub lookup: ws=${workspaceId.slice(0,16)}... broker=${brokerAppId.slice(0,16)}... trader=${trader}`);
   const sumsubStatus = checkSumsub(confHTTP, runtime, trader, workspaceId, brokerAppId);
   const traderRisk = checkWalletRisk(confHTTP, runtime, trader);
   const counterpartyRisk = checkWalletRisk(confHTTP, runtime, counterparty as Address);

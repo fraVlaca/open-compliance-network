@@ -2,6 +2,7 @@
   "sumsubApiUrl": "https://api.sumsub.com",
   "sumsubSecretKey": "00E19drncuW96bGjVx2g5OBgfVKOHDfs",
   "chainalysisApiUrl": "https://api.chainalysis.com/api/risk/v2",
+  "credentialConsumerAddress": "0x03726f51b287b04710DeB2cb62Bb9264bAC5bb11",
   "reportConsumerAddress": "0x78Bb94BCf494BB9aDE77f28dd20cE80077275A27",
   "integratorRegistryAddress": "0xCC1Ca53a3e0fc709EEF9a4682dC1bC1db3C028b1",
   "identityRegistryAddress": "0xC6DD797BF67d4f15e983ca2CE43967F345DF1993",

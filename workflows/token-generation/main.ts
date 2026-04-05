@@ -100,9 +100,25 @@ const onHttpTrigger = (runtime: Runtime<Config>, payload: HTTPPayload): string =
   const wallet = input.walletAddress as Address;
   runtime.log(`Token generation: wallet=${wallet}`);
 
-  // 1. Verify integrator on-chain (if provided)
+  // 1. Look up the wallet in IntegratorRegistry (same as Workflow A)
   let brokerAppId: Hex = keccak256(toHex("self-onboard"));
   let wsId: Hex = keccak256(toHex("default"));
+
+  {
+    // Always try the wallet itself first — matches what Workflow A does
+    const network = getNetwork({ chainFamily: "evm", chainSelectorName: runtime.config.chainSelectorName, isTestnet: true });
+    if (network) {
+      const evmClient = new cre.capabilities.EVMClient(network.chainSelector.selector);
+      try {
+        const callData = encodeFunctionData({ abi: REGISTRY_ABI, functionName: "getIntegrator", args: [wallet] });
+        const regResult = evmClient.callContract(runtime, {
+          call: encodeCallMsg({ from: "0x0000000000000000000000000000000000000000" as Address, to: runtime.config.integratorRegistryAddress as Address, data: callData }),
+        }).result();
+        const decoded = decodeFunctionResult({ abi: REGISTRY_ABI, functionName: "getIntegrator", data: bytesToHex(regResult.data) as Hex }) as [Hex, Hex, number, boolean];
+        if (decoded[3]) { brokerAppId = decoded[0]; wsId = decoded[1]; }
+      } catch { runtime.log("Wallet IntegratorRegistry lookup failed — using defaults"); }
+    }
+  }
 
   if (input.integratorAddress) {
     const network = getNetwork({ chainFamily: "evm", chainSelectorName: runtime.config.chainSelectorName, isTestnet: true });

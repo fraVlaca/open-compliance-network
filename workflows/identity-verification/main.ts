@@ -142,6 +142,8 @@ const onHttpTrigger = (runtime: Runtime<Config>, payload: HTTPPayload): string =
   } catch { runtime.log("IntegratorRegistry lookup failed — using defaults"); }
 
   const externalUserId = `${wsId}:${brokerAppId}:${wallet}`;
+  runtime.log(`externalUserId=${externalUserId.slice(0, 50)}...`);
+  runtime.log(`wsId=${wsId.slice(0,16)}... brokerAppId=${brokerAppId.slice(0,16)}...`);
 
   // 2. Sumsub KYC check via Confidential HTTP
   const confHTTP = new ConfidentialHTTPClient();
@@ -203,12 +205,15 @@ const onHttpTrigger = (runtime: Runtime<Config>, payload: HTTPPayload): string =
   // prepareReportRequest converts hex payload to the format runtime.report() expects
   const reportReq = prepareReportRequest(reportPayload);
   const report = runtime.report(reportReq).result();
-  evmClient.writeReport(runtime, {
+  const writeResult = evmClient.writeReport(runtime, {
     receiver: runtime.config.consumerContractAddress,
     report,
     gasConfig: { gasLimit: "500000" },
   }).result();
 
+  // Log the write result — check if tx actually submitted
+  const txHash = writeResult.txHash ? bytesToHex(writeResult.txHash) : "none";
+  runtime.log(`writeReport result: txStatus=${writeResult.txStatus}, txHash=${txHash}, error=${writeResult.errorMessage || "none"}`);
   runtime.log(`Credential issued: wallet=${wallet}, risk=${riskScore}, jurisdiction=${jurisdiction}`);
   return JSON.stringify({ status: "verified", wallet, riskScore, jurisdiction });
 };

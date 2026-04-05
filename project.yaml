@@ -27,6 +27,10 @@ staging-settings:
       url: https://ethereum-sepolia-rpc.publicnode.com
     - chain-name: ethereum-mainnet
       url: https://eth.blockrazor.xyz
+  experimental-chains:
+    - chain-selector: 3034092155422581607
+      rpc-url: https://rpc.testnet.arc.network
+      forwarder: "0xBA123f7887C1aB12686C62F12A9aD3B435de3292"
 
 # ==========================================================================
 production-settings:
