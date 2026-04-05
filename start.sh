@@ -1,6 +1,6 @@
 #!/bin/bash
 # ============================================================================
-# OCN (Open Compliance Network) — Full Stack Starter
+# OCN (Open Compliance Network) - Full Stack Starter
 #
 # Starts:
 #   - Backend (@ocn/node-sdk) on port 3001
@@ -14,7 +14,7 @@ set -e
 DIR="$(cd "$(dirname "$0")" && pwd)"
 
 echo "╭──────────────────────────────────────────╮"
-echo "│  OCN — Open Compliance Network           │"
+echo "│  OCN - Open Compliance Network           │"
 echo "│  Starting backend + frontend...           │"
 echo "╰──────────────────────────────────────────╯"
 

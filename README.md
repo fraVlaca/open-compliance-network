@@ -9,17 +9,17 @@
 
 </div>
 
-# Open Compliance Layer — Trustless Compliance Engine for Institutional DeFi
+# Open Compliance Layer - Trustless Compliance Engine for Institutional DeFi
 
-A shared, verifiable compliance orchestration layer built on [Chainlink CRE](https://docs.chain.link/cre) and [Chainlink ACE](https://chain.link/automated-compliance-engine), deployed on [Arc](https://docs.arc.network/) (Circle). Runs KYC, AML, sanctions screening, and per-trade compliance checks inside a Trusted Execution Environment on a decentralized oracle network — producing on-chain attestations that every counterparty can trust.
+A shared, verifiable compliance orchestration layer built on [Chainlink CRE](https://docs.chain.link/cre) and [Chainlink ACE](https://chain.link/automated-compliance-engine), deployed on [Arc](https://docs.arc.network/) (Circle). Runs KYC, AML, sanctions screening, and per-trade compliance checks inside a Trusted Execution Environment on a decentralized oracle network - producing on-chain attestations, per trade checks and audit trails that every counterparty can trust.
 
 ## The Problem
 
-DeFi protocols face a compliance catch-22: they need KYC to attract institutional capital, but adding compliance infrastructure destroys their decentralization and triggers regulatory classification as a financial intermediary. Even protocols that accept this burden see every counterparty (LPs, brokers, custodians) independently running the same compliance checks — duplicating costs across Sumsub, Chainalysis, and Notabene accounts.
+DeFi protocols face a compliance catch-22: they need KYC to attract institutional capital, but adding compliance infrastructure destroys their decentralization and triggers regulatory classification as a financial intermediary. Even protocols that accept this burden see every counterparty (LPs, brokers, custodians) independently running the same compliance checks - duplicating costs across Sumsub, Chainalysis, and Notabene accounts.
 
 ## The Solution
 
-A compliance oracle that sits between DeFi protocols and compliance providers. Protocols read an on-chain attestation — same as reading a Chainlink price feed. They never touch PII, never run KYC infrastructure, never become data processors.
+A compliance oracle that sits between DeFi protocols and compliance providers. Protocols read an on-chain attestation - same as reading a Chainlink price feed. They never touch PII, never run KYC infrastructure, never become data processors.
 
 **One check per trade. One audit trail. Every party trusts it.**
 
@@ -31,20 +31,20 @@ Protocol contract reads: require(isVerified(wallet))  ◄───────�
 
 ## Why Arc (Circle)
 
-Open Compliance Layer is deployed on **Arc** as a foundational DeFi building block for the ecosystem. Arc is purpose-built for institutional finance — USDC-native gas, Circle's full-stack platform, and regulatory-first design. This is exactly the chain where compliance infrastructure matters most.
+Open Compliance Layer is deployed on **Arc** as a foundational DeFi building block for the ecosystem. Arc is purpose-built for institutional finance - USDC-native gas, Circle's full-stack platform, and regulatory-first design. This is exactly the chain where compliance infrastructure matters most.
 
 **What we unlock for Arc:**
 
 - **Institutional DeFi readiness out of the box.** Any protocol deploying on Arc can integrate compliance with 1 line of Solidity. No KYC backend to build, no Sumsub account to manage, no compliance team to hire.
-- **USDC-native compliance gating.** The EscrowSwap demo uses USDC for escrow-based swaps with compliance checks — the natural primitive for Arc's stablecoin-first economy.
+- **USDC-native compliance gating.** The EscrowSwap demo uses USDC for escrow-based swaps with compliance checks - the natural primitive for Arc's stablecoin-first economy.
 - **Shared compliance infrastructure.** Instead of every Arc protocol independently building compliance stacks, they share one engine. LPs, brokers, and protocols all read from the same on-chain attestations.
 - **Preserves decentralization.** Arc protocols can serve regulated institutions without becoming regulated entities themselves.
-- **Cross-chain ready.** Credentials use ACE's Cross-Chain Identifiers (CCIDs) — portable across EVM chains via CCIP.
+- **Cross-chain ready.** Credentials use ACE's Cross-Chain Identifiers (CCIDs) - portable across EVM chains via CCIP.
 
 ## Key Features
 
-- **1-line integration**: `require(consumer.isVerified(msg.sender))` — that's the entire compliance check
-- **Per-trade deep checks**: Sanctions screening, counterparty risk, jurisdiction rules — auto-callback executes the trade
+- **1-line integration**: `require(consumer.isVerified(msg.sender))` - that's the entire compliance check
+- **Per-trade deep checks**: Sanctions screening, counterparty risk, jurisdiction rules - auto-callback executes the trade
 - **Shared audit trail**: On-chain hash + IPFS record. All parties see the same data. Point-in-time evidence.
 - **Multi-tenant scoping**: Protocol -> Broker -> LP hierarchy. Each sees only their scoped data. Wallet = API key.
 - **Provider credentials in TEE**: Sumsub and Chainalysis keys never leave the enclave.
@@ -87,7 +87,7 @@ Open Compliance Layer is deployed on **Arc** as a foundational DeFi building blo
 | IntegratorRegistry | [`0xCC1Ca53a...`](https://testnet.arcscan.app/address/0xCC1Ca53a3e0fc709EEF9a4682dC1bC1db3C028b1) |
 | EscrowSwap | [`0x8f4e547A...`](https://testnet.arcscan.app/address/0x8f4e547A8AC08acbE6deeD40fDD8B665b76B3b6D) |
 
-**Network**: Arc Testnet (Circle) — Chain ID 5042002 — [Faucet](https://faucet.circle.com/)
+**Network**: Arc Testnet (Circle) - Chain ID 5042002 - [Faucet](https://faucet.circle.com/)
 
 ## Integration Patterns
 
@@ -190,7 +190,7 @@ See [`documentation/`](./documentation/) for full architecture docs:
 
 - **Smart Contracts**: Solidity 0.8.26, Foundry, [@chainlink/ace](https://www.npmjs.com/package/@chainlink/ace)
 - **CRE Workflows**: TypeScript, Chainlink Runtime Environment, Confidential HTTP
-- **Target Chain**: [Arc Testnet](https://docs.arc.network/) (Circle) — USDC-native L1
+- **Target Chain**: [Arc Testnet](https://docs.arc.network/) (Circle) - USDC-native L1
 - **Audit Storage**: IPFS via [Pinata](https://pinata.cloud/) (content-addressed, on-chain hash for integrity)
 - **Compliance Providers**: Sumsub (KYC/AML), Chainalysis (blockchain analytics)
 
@@ -198,7 +198,7 @@ See [`documentation/`](./documentation/) for full architecture docs:
 
 Built for **ETHGlobal Cannes 2026**.
 
-**Arc Track (Circle)**: Open Compliance Layer is a foundational DeFi primitive for Arc — enabling any protocol on the chain to serve regulated institutions without building their own compliance infrastructure. Deployed and live on Arc Testnet.
+**Arc Track (Circle)**: Open Compliance Layer is a foundational DeFi primitive for Arc - enabling any protocol on the chain to serve regulated institutions without building their own compliance infrastructure. Deployed and live on Arc Testnet.
 
 **Chainlink CRE Track**: Three CRE workflows running compliance checks inside TEE, writing DON-signed attestations on-chain via KeystoneForwarder, using Confidential HTTP for provider API calls with secrets in Vault DON.
 
