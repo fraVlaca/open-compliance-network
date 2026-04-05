@@ -6,8 +6,8 @@ import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 /// @title IntegratorRegistry
 /// @notice On-chain registry for workspaces and integrator identities.
 ///         CRE workflows read this contract to determine a requester's role,
-///         appId, and workspace — enforcing scoped access to compliance data.
-///         Wallets registered here act as "API keys" — no backend needed.
+///         appId, and workspace - enforcing scoped access to compliance data.
+///         Wallets registered here act as "API keys" - no backend needed.
 contract IntegratorRegistry is Ownable {
   // --- Types ---
 
@@ -94,7 +94,7 @@ contract IntegratorRegistry is Ownable {
 
   /// @notice Join an existing workspace as a broker or LP.
   /// @param workspaceId The workspace APP-ID to join.
-  /// @param role BROKER or LP (not PROTOCOL — that's set at workspace creation).
+  /// @param role BROKER or LP (not PROTOCOL - that's set at workspace creation).
   function joinWorkspace(bytes32 workspaceId, Role role) external returns (bytes32 integratorAppId) {
     Workspace storage ws = workspaces[workspaceId];
     if (ws.admin == address(0)) revert WorkspaceNotFound(workspaceId);

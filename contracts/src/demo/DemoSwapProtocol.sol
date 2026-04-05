@@ -8,9 +8,9 @@ import {IComplianceCredentialConsumer} from "../interfaces/IComplianceCredential
 
 /// @title DemoSwapProtocol
 /// @notice Demonstrates all compliance integration patterns:
-///   Pattern 1: `swapSimple` — 1-line require(isVerified) check (cached credentials)
-///   Pattern 2: `swapACE` — ACE runPolicy modifier (transparent policy check)
-///   Pattern 3: `swap` — single tx, CRE runs per-trade checks, auto-callbacks to execute
+///   Pattern 1: `swapSimple` - 1-line require(isVerified) check (cached credentials)
+///   Pattern 2: `swapACE` - ACE runPolicy modifier (transparent policy check)
+///   Pattern 3: `swap` - single tx, CRE runs per-trade checks, auto-callbacks to execute
 contract DemoSwapProtocol is PolicyProtected, IComplianceCallback {
   // --- Types ---
 
@@ -60,7 +60,7 @@ contract DemoSwapProtocol is PolicyProtected, IComplianceCallback {
   }
 
   // =========================================================================
-  // Pattern 1: Simplest — 1-line require (cached KYC credential)
+  // Pattern 1: Simplest - 1-line require (cached KYC credential)
   // =========================================================================
 
   /// @notice Swap with cached credential check. Synchronous, single tx.
@@ -73,7 +73,7 @@ contract DemoSwapProtocol is PolicyProtected, IComplianceCallback {
   }
 
   // =========================================================================
-  // Pattern 2: ACE PolicyEngine — transparent policy check
+  // Pattern 2: ACE PolicyEngine - transparent policy check
   // =========================================================================
 
   /// @notice Swap with ACE PolicyEngine. Synchronous, single tx.
@@ -84,7 +84,7 @@ contract DemoSwapProtocol is PolicyProtected, IComplianceCallback {
   }
 
   // =========================================================================
-  // Pattern 3: Per-trade deep check — single user tx, CRE auto-callbacks
+  // Pattern 3: Per-trade deep check - single user tx, CRE auto-callbacks
   // =========================================================================
 
   /// @notice Swap with full per-trade compliance (sanctions, counterparty, jurisdiction).
@@ -106,7 +106,7 @@ contract DemoSwapProtocol is PolicyProtected, IComplianceCallback {
   }
 
   // =========================================================================
-  // IComplianceCallback — auto-called by ComplianceReportConsumer
+  // IComplianceCallback - auto-called by ComplianceReportConsumer
   // =========================================================================
 
   /// @notice Called by ComplianceReportConsumer when the DON approves the trade.

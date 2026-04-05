@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-/// @title MockKeystoneForwarder — accepts reports without DON signature verification
+/// @title MockKeystoneForwarder - accepts reports without DON signature verification
 /// @notice For simulation/demo only. In production, the real KeystoneForwarder
 ///         verifies DON threshold signatures before forwarding.
 ///
@@ -13,7 +13,7 @@ pragma solidity ^0.8.20;
 ///   [41:45] flags (4 bytes)
 ///   [45:77] padding (32 bytes)
 ///   [77:87] workflowName (10 bytes)
-///   [87:107] workflowOwner (20 bytes — but filled with 0xaa in simulation)
+///   [87:107] workflowOwner (20 bytes - but filled with 0xaa in simulation)
 ///   [107:109] reportName (2 bytes)
 ///   [109:] ABI-encoded report payload
 ///

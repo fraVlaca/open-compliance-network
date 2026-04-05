@@ -147,7 +147,7 @@ contract EscrowSwap is IComplianceCallback {
   }
 
   // =========================================================================
-  // IComplianceCallback — auto-called by ComplianceReportConsumer
+  // IComplianceCallback - auto-called by ComplianceReportConsumer
   // =========================================================================
 
   function onComplianceApproved(bytes32 tradeId) external override {
